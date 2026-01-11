@@ -20,3 +20,6 @@ export const DocumentSource = {
   GITHUB: 'GITHUB',
   WEB: 'WEB',
 } as const;
+
+export type DocumentSourceType =
+  (typeof DocumentSource)[keyof typeof DocumentSource];

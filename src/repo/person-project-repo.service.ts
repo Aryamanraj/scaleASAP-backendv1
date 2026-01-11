@@ -152,4 +152,24 @@ export class PersonProjectRepoService {
       return { data: null, error };
     }
   }
+
+  async count(
+    options: FindManyOptions<PersonProject>,
+  ): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `PersonProjectRepoService.count: Counting PersonProjects`,
+      );
+      const count = await this.personProjectRepo.count(options);
+      this.logger.info(
+        `PersonProjectRepoService.count: Found ${count} PersonProjects`,
+      );
+      return { data: count, error: null };
+    } catch (error) {
+      this.logger.error(
+        `PersonProjectRepoService.count: Error - ${error.stack}`,
+      );
+      return { data: null, error };
+    }
+  }
 }

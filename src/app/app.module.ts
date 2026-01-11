@@ -15,6 +15,7 @@ import { CompanyProjectModule } from '../company-project/company-project.module'
 import { UserModule } from '../user/user.module';
 import { PersonModule } from '../person/person.module';
 import { ModuleRunnerModule } from '../module-runner/module-runner.module';
+import { InsightsModule } from '../insights/insights.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { ModuleRunnerModule } from '../module-runner/module-runner.module';
     UserModule,
     PersonModule,
     ModuleRunnerModule,
+    InsightsModule,
   ],
   controllers: [],
   providers: [],
