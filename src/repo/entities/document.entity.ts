@@ -56,6 +56,10 @@ export class Document extends BaseEntity {
   ModuleRunID: number;
 
   @ApiProperty()
+  @Column({ type: 'jsonb', nullable: true })
+  PayloadJson: any;
+
+  @ApiProperty()
   @CreateDateColumn({
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',

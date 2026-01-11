@@ -136,4 +136,24 @@ export class DocumentRepoService {
       return { data: null, error };
     }
   }
+
+  async count(options: FindManyOptions<Document>): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `Counting documents [condition: ${JSON.stringify(options)}]`,
+      );
+
+      const result = await this.documentRepo.count(options);
+
+      this.logger.info(`Documents count: ${result}`);
+      return { data: result, error: null };
+    } catch (error) {
+      this.logger.error(
+        `Error in counting documents [condition: ${JSON.stringify(options)}]: ${
+          error.stack
+        }`,
+      );
+      return { data: null, error };
+    }
+  }
 }

@@ -14,17 +14,6 @@ import { ResultWithError } from '../common/interfaces';
 import { GenericError } from '../common/errors/Generic.error';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-interface CreateSnapshotParams {
-  ProjectID: number;
-  PersonID: number;
-  LayerNumber: number;
-  ComposerModuleKey: string;
-  ComposerVersion: string;
-  CompiledJson: any;
-  GeneratedAt: Date;
-  ModuleRunID: number;
-}
-
 @Injectable()
 export class LayerSnapshotRepoService {
   private layerSnapshotRepo: Repository<LayerSnapshot>;
@@ -164,62 +153,22 @@ export class LayerSnapshotRepoService {
     }
   }
 
-  async createNextSnapshotVersion(
-    params: CreateSnapshotParams,
+  async count(
+    options: FindManyOptions<LayerSnapshot>,
   ): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `Creating next snapshot version [params: ${JSON.stringify(params)}]`,
+        `Counting layer snapshots [condition: ${JSON.stringify(options)}]`,
       );
 
-      // Find latest snapshot version for this ProjectID, PersonID, LayerNumber
-      const latestSnapshot = await this.layerSnapshotRepo.findOne({
-        where: {
-          ProjectID: params.ProjectID,
-          PersonID: params.PersonID,
-          LayerNumber: params.LayerNumber,
-        },
-        order: {
-          SnapshotVersion: 'DESC',
-        },
-      });
+      const result = await this.layerSnapshotRepo.count(options);
 
-      const newVersion = latestSnapshot
-        ? latestSnapshot.SnapshotVersion + 1
-        : 1;
-
-      this.logger.info(
-        `Latest version: ${
-          latestSnapshot?.SnapshotVersion || 'none'
-        }, new version: ${newVersion} [ProjectID: ${
-          params.ProjectID
-        }, PersonID: ${params.PersonID}, LayerNumber: ${params.LayerNumber}]`,
-      );
-
-      // Create new snapshot with incremented version
-      const newSnapshot = this.layerSnapshotRepo.create({
-        ProjectID: params.ProjectID,
-        PersonID: params.PersonID,
-        LayerNumber: params.LayerNumber,
-        SnapshotVersion: newVersion,
-        ComposerModuleKey: params.ComposerModuleKey,
-        ComposerVersion: params.ComposerVersion,
-        CompiledJson: params.CompiledJson,
-        GeneratedAt: params.GeneratedAt,
-        ModuleRunID: params.ModuleRunID,
-      });
-
-      const result = await this.layerSnapshotRepo.save(newSnapshot);
-
-      this.logger.info(
-        `Next snapshot version created [LayerSnapshotID: ${result.LayerSnapshotID}, SnapshotVersion: ${result.SnapshotVersion}]`,
-      );
-
+      this.logger.info(`Layer snapshots count: ${result}`);
       return { data: result, error: null };
     } catch (error) {
       this.logger.error(
-        `Error in createNextSnapshotVersion [params: ${JSON.stringify(
-          params,
+        `Error in counting layer snapshots [condition: ${JSON.stringify(
+          options,
         )}]: ${error.stack}`,
       );
       return { data: null, error };

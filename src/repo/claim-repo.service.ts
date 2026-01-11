@@ -151,105 +151,23 @@ export class ClaimRepoService {
     }
   }
 
-  async insertClaimAndSupersedePrevious(
-    params: InsertClaimParams,
-  ): Promise<ResultWithError> {
-    const queryRunner = this.entitymanager.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
+  async count(options: FindManyOptions<Claim>): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `Inserting claim and superseding previous [params: ${JSON.stringify(
-          params,
-        )}]`,
+        `Counting claims [condition: ${JSON.stringify(options)}]`,
       );
 
-      // Step 1: Insert new claim
-      const newClaim = this.claimRepo.create({
-        ProjectID: params.ProjectID,
-        PersonID: params.PersonID,
-        ClaimType: params.ClaimType,
-        GroupKey: params.GroupKey || null,
-        ValueJson: params.ValueJson,
-        Confidence: params.Confidence,
-        ObservedAt: params.ObservedAt || null,
-        ValidFrom: params.ValidFrom || null,
-        ValidTo: params.ValidTo || null,
-        SourceDocumentID: params.SourceDocumentID,
-        ModuleRunID: params.ModuleRunID,
-        SchemaVersion: params.SchemaVersion,
-      });
+      const result = await this.claimRepo.count(options);
 
-      const savedClaim = await queryRunner.manager.save(newClaim);
-      this.logger.info(`New claim inserted [ClaimID: ${savedClaim.ClaimID}]`);
-
-      // Step 2: Find previous active claims to supersede
-      const whereCondition: FindOptionsWhere<Claim> = {
-        ProjectID: params.ProjectID,
-        PersonID: params.PersonID,
-        ClaimType: params.ClaimType,
-        SupersededAt: IsNull(),
-      };
-
-      if (params.GroupKey !== undefined) {
-        whereCondition.GroupKey = params.GroupKey;
-      }
-
-      this.logger.info(
-        `Finding previous active claims to supersede [condition: ${JSON.stringify(
-          whereCondition,
-        )}]`,
-      );
-
-      const previousClaims = await queryRunner.manager.find(Claim, {
-        where: whereCondition,
-      });
-
-      // Filter out the newly created claim
-      const claimsToSupersede = previousClaims.filter(
-        (c) => c.ClaimID !== savedClaim.ClaimID,
-      );
-
-      this.logger.info(
-        `Found ${claimsToSupersede.length} previous claims to supersede`,
-      );
-
-      // Step 3: Update previous claims
-      if (claimsToSupersede.length > 0) {
-        const now = new Date();
-        for (const claim of claimsToSupersede) {
-          await queryRunner.manager.update(
-            Claim,
-            { ClaimID: claim.ClaimID },
-            {
-              SupersededAt: now,
-              ReplacedByClaimID: savedClaim.ClaimID,
-            },
-          );
-          this.logger.info(
-            `Superseded claim [ClaimID: ${claim.ClaimID}, ReplacedByClaimID: ${savedClaim.ClaimID}]`,
-          );
-        }
-      }
-
-      await queryRunner.commitTransaction();
-
-      this.logger.info(
-        `Successfully inserted claim and superseded ${claimsToSupersede.length} previous claims [ClaimID: ${savedClaim.ClaimID}]`,
-      );
-
-      return { data: savedClaim, error: null };
+      this.logger.info(`Claims count: ${result}`);
+      return { data: result, error: null };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
       this.logger.error(
-        `Error in insertClaimAndSupersedePrevious [params: ${JSON.stringify(
-          params,
-        )}]: ${error.stack}`,
+        `Error in counting claims [condition: ${JSON.stringify(options)}]: ${
+          error.stack
+        }`,
       );
       return { data: null, error };
-    } finally {
-      await queryRunner.release();
     }
   }
 }

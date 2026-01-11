@@ -263,58 +263,6 @@ export class CompanyProjectService {
     }
   }
 
-  async addUserToProject(
-    projectId: number,
-    userId: number,
-    projectRole: ProjectUserRole = ProjectUserRole.MEMBER,
-  ): Promise<ResultWithError> {
-    try {
-      this.logger.info(
-        `CompanyProjectService.addUserToProject: Adding UserID=${userId} to ProjectID=${projectId} with role=${projectRole}`,
-      );
-
-      // Ensure project exists
-      const project = await Promisify<Project>(
-        this.projectRepoService.get({ where: { ProjectID: projectId } }, true),
-      );
-
-      // Ensure user exists
-      const user = await Promisify<User>(
-        this.userRepoService.get({ where: { UserID: userId } }, true),
-      );
-
-      // Ensure user.CompanyID matches project.CompanyID
-      if (user.CompanyID !== project.CompanyID) {
-        this.logger.error(
-          `CompanyProjectService.addUserToProject: User CompanyID=${user.CompanyID} does not match Project CompanyID=${project.CompanyID}`,
-        );
-        throw new GenericError(
-          'User does not belong to the same company as the project',
-          HttpStatus.FORBIDDEN,
-        );
-      }
-
-      const membership = await Promisify<ProjectUser>(
-        this.projectUserRepoService.addUserToProject(
-          projectId,
-          userId,
-          projectRole,
-        ),
-      );
-
-      this.logger.info(
-        `CompanyProjectService.addUserToProject: Successfully added UserID=${userId} to ProjectID=${projectId}`,
-      );
-
-      return { error: null, data: { added: true, membership } };
-    } catch (error) {
-      this.logger.error(
-        `CompanyProjectService.addUserToProject: Error - ${error.stack}`,
-      );
-      return { error: error, data: null };
-    }
-  }
-
   async removeUserFromProject(
     projectId: number,
     userId: number,
@@ -370,6 +318,84 @@ export class CompanyProjectService {
     } catch (error) {
       this.logger.error(
         `CompanyProjectService.getProjectUsers: Error - ${error.stack}`,
+      );
+      return { error: error, data: null };
+    }
+  }
+
+  async isUserInProject(
+    projectId: number,
+    userId: number,
+  ): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `CompanyProjectService.isUserInProject: Checking if UserID=${userId} is in ProjectID=${projectId}`,
+      );
+
+      const projectUsers = await Promisify<ProjectUser[]>(
+        this.projectUserRepoService.getAll(
+          { where: { ProjectID: projectId, UserID: userId } },
+          false,
+        ),
+      );
+
+      const isInProject = projectUsers.length > 0;
+
+      this.logger.info(
+        `CompanyProjectService.isUserInProject: Result=${isInProject} for UserID=${userId}, ProjectID=${projectId}`,
+      );
+
+      return { error: null, data: isInProject };
+    } catch (error) {
+      this.logger.error(
+        `CompanyProjectService.isUserInProject: Error - ${error.stack}`,
+      );
+      return { error: error, data: null };
+    }
+  }
+
+  async addUserToProject(
+    projectId: number,
+    userId: number,
+    projectRole: ProjectUserRole = ProjectUserRole.MEMBER,
+  ): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `CompanyProjectService.addUserToProject: Adding UserID=${userId} to ProjectID=${projectId} with role=${projectRole}`,
+      );
+
+      // Check if user already in project
+      const existing = await Promisify<ProjectUser[]>(
+        this.projectUserRepoService.getAll(
+          { where: { ProjectID: projectId, UserID: userId } },
+          false,
+        ),
+      );
+
+      if (existing.length > 0) {
+        this.logger.info(
+          `CompanyProjectService.addUserToProject: UserID=${userId} already in ProjectID=${projectId}`,
+        );
+        return { error: null, data: existing[0] };
+      }
+
+      // Add user to project
+      const projectUser = await Promisify<ProjectUser>(
+        this.projectUserRepoService.create({
+          ProjectID: projectId,
+          UserID: userId,
+          ProjectRole: projectRole,
+        }),
+      );
+
+      this.logger.info(
+        `CompanyProjectService.addUserToProject: Successfully added UserID=${userId} to ProjectID=${projectId} with ProjectUserID=${projectUser.ProjectUserID}`,
+      );
+
+      return { error: null, data: projectUser };
+    } catch (error) {
+      this.logger.error(
+        `CompanyProjectService.addUserToProject: Error - ${error.stack}`,
       );
       return { error: error, data: null };
     }

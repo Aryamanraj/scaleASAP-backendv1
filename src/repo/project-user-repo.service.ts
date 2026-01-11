@@ -144,71 +144,16 @@ export class ProjectUserRepoService {
     }
   }
 
-  async isUserInProject(
-    ProjectID: number,
-    UserID: number,
-  ): Promise<ResultWithError> {
+  async count(options: FindManyOptions<ProjectUser>): Promise<ResultWithError> {
     try {
+      this.logger.info(`ProjectUserRepoService.count: Counting ProjectUsers`);
+      const count = await this.projectUserRepo.count(options);
       this.logger.info(
-        `Checking if user is in project [ProjectID: ${ProjectID}, UserID: ${UserID}]`,
+        `ProjectUserRepoService.count: Found ${count} ProjectUsers`,
       );
-
-      const result = await this.projectUserRepo.findOne({
-        where: { ProjectID, UserID },
-      });
-
-      const isInProject = !!result;
-      this.logger.info(
-        `User in project check result: ${isInProject} [ProjectID: ${ProjectID}, UserID: ${UserID}]`,
-      );
-
-      return { data: isInProject, error: null };
+      return { data: count, error: null };
     } catch (error) {
-      this.logger.error(
-        `Error checking if user is in project [ProjectID: ${ProjectID}, UserID: ${UserID}]: ${error.stack}`,
-      );
-      return { data: null, error };
-    }
-  }
-
-  async addUserToProject(
-    ProjectID: number,
-    UserID: number,
-    ProjectRole: ProjectUserRole = ProjectUserRole.MEMBER,
-  ): Promise<ResultWithError> {
-    try {
-      this.logger.info(
-        `Adding user to project [ProjectID: ${ProjectID}, UserID: ${UserID}, ProjectRole: ${ProjectRole}]`,
-      );
-
-      // Check if already exists
-      const existing = await this.projectUserRepo.findOne({
-        where: { ProjectID, UserID },
-      });
-
-      if (existing) {
-        this.logger.info(
-          `User already in project [ProjectID: ${ProjectID}, UserID: ${UserID}]`,
-        );
-        return { data: existing, error: null };
-      }
-
-      // Create new entry
-      const newProjectUser = this.projectUserRepo.create({
-        ProjectID,
-        UserID,
-        ProjectRole,
-      });
-      const result = await this.projectUserRepo.save(newProjectUser);
-
-      this.logger.info(
-        `User added to project [ProjectUserID: ${result.ProjectUserID}, ProjectID: ${ProjectID}, UserID: ${UserID}]`,
-      );
-      return { data: result, error: null };
-    } catch (error) {
-      this.logger.error(
-        `Error adding user to project [ProjectID: ${ProjectID}, UserID: ${UserID}]: ${error.stack}`,
-      );
+      this.logger.error(`ProjectUserRepoService.count: Error - ${error.stack}`);
       return { data: null, error };
     }
   }

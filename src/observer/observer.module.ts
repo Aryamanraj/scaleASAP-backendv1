@@ -10,6 +10,12 @@ import { LateLogObserverService } from './services/late-log-observer.service';
 import { ModuleRunConsumer } from './consumers/module-run.consumer';
 import { ModuleDispatcherService } from './services/module-dispatcher.service';
 import { NoopModuleHandler } from './services/handlers/noop-module.handler';
+import { ManualDocumentConnectorHandler } from './services/handlers/manual-document-connector.handler';
+import { CoreIdentityEnricherHandler } from './services/handlers/core-identity-enricher.handler';
+import { Layer1ComposerHandler } from './services/handlers/layer-1-composer.handler';
+import { DocumentReaderService } from './services/document-reader.service';
+import { ClaimWriterService } from './services/claim-writer.service';
+import { LayerSnapshotWriterService } from './services/layer-snapshot-writer.service';
 
 @Module({
   imports: [
@@ -29,6 +35,12 @@ import { NoopModuleHandler } from './services/handlers/noop-module.handler';
     ModuleRunConsumer,
     ModuleDispatcherService,
     NoopModuleHandler,
+    ManualDocumentConnectorHandler,
+    CoreIdentityEnricherHandler,
+    Layer1ComposerHandler,
+    DocumentReaderService,
+    ClaimWriterService,
+    LayerSnapshotWriterService,
   ],
   controllers: [],
 })
