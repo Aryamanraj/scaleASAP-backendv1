@@ -14,6 +14,7 @@ import { AuthModule } from '../auth/auth.module';
 import { CompanyProjectModule } from '../company-project/company-project.module';
 import { UserModule } from '../user/user.module';
 import { PersonModule } from '../person/person.module';
+import { ModuleRunnerModule } from '../module-runner/module-runner.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { PersonModule } from '../person/person.module';
     CompanyProjectModule,
     UserModule,
     PersonModule,
+    ModuleRunnerModule,
   ],
   controllers: [],
   providers: [],
