@@ -12,6 +12,7 @@ import { AdminModule } from '../admin/admin.module';
 import { HealthCheckModule } from '../health/health.module';
 import { AuthModule } from '../auth/auth.module';
 import { CompanyProjectModule } from '../company-project/company-project.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { CompanyProjectModule } from '../company-project/company-project.module'
     AdminModule,
     AuthModule,
     CompanyProjectModule,
+    UserModule,
   ],
   controllers: [],
   providers: [],
