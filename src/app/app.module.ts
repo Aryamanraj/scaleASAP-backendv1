@@ -13,6 +13,7 @@ import { HealthCheckModule } from '../health/health.module';
 import { AuthModule } from '../auth/auth.module';
 import { CompanyProjectModule } from '../company-project/company-project.module';
 import { UserModule } from '../user/user.module';
+import { PersonModule } from '../person/person.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { UserModule } from '../user/user.module';
     AuthModule,
     CompanyProjectModule,
     UserModule,
+    PersonModule,
   ],
   controllers: [],
   providers: [],
