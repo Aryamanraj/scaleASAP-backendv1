@@ -9,6 +9,7 @@ export class AttachPersonToProjectDto {
   tag?: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsNumber()
   createdByUserId: number;
 }

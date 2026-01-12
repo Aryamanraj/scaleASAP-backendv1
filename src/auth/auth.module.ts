@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerMiddleware } from '../common/middlewares/logger.middleware';
 import { AdminAuthGuard } from './guards/admin-auth.guard';
 import { UserAuthGuard } from './guards/user-auth.guard';
+import { CompositeAuthGuard } from './guards/composite-auth.guard';
 
 @Module({
   imports: [
@@ -22,9 +23,9 @@ import { UserAuthGuard } from './guards/user-auth.guard';
       inject: [ConfigService],
     }),
   ],
-  providers: [AdminAuthGuard, UserAuthGuard],
+  providers: [AdminAuthGuard, UserAuthGuard, CompositeAuthGuard],
   controllers: [],
-  exports: [AdminAuthGuard, UserAuthGuard],
+  exports: [AdminAuthGuard, UserAuthGuard, CompositeAuthGuard],
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

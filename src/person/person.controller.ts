@@ -27,6 +27,8 @@ import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 import { ListPersonsQueryDto } from './dto/list-persons-query.dto';
 import { AttachPersonToProjectDto } from './dto/attach-person-to-project.dto';
+import { CompositeAuthGuard } from '../auth/guards/composite-auth.guard';
+import { OptionalUserId } from '../common/decorators/userId-optional.decorator';
 
 @Controller('persons')
 @ApiTags('Persons')
@@ -171,7 +173,7 @@ export class PersonController {
 @Controller('projects')
 @ApiTags('Persons')
 @ApiBearerAuth('Api-auth')
-@UseGuards(AdminAuthGuard)
+@UseGuards(CompositeAuthGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class PersonProjectController {
   constructor(private personService: PersonService) {}
@@ -186,6 +188,7 @@ export class PersonProjectController {
     @Param('projectId', ParseIntPipe) projectId: number,
     @Param('personId', ParseIntPipe) personId: number,
     @Body() attachDto: AttachPersonToProjectDto,
+    @OptionalUserId() userId: number,
     @Res() res: Response,
   ) {
     let resStatus = HttpStatus.CREATED;
@@ -195,11 +198,10 @@ export class PersonProjectController {
 
     try {
       const personProject = await Promisify<PersonProject>(
-        this.personService.attachPersonToProject(
-          projectId,
-          personId,
-          attachDto,
-        ),
+        this.personService.attachPersonToProject(projectId, personId, {
+          tag: attachDto.tag,
+          createdByUserId: attachDto.createdByUserId ?? userId,
+        }),
       );
       resData = personProject;
     } catch (error) {
