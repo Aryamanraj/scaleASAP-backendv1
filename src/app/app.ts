@@ -30,7 +30,7 @@ async function bootstrap() {
 
 function configureSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
-    .setTitle('PingPong APIs')
+    .setTitle('ScaleASAP APIs')
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -42,6 +42,15 @@ function configureSwagger(app: INestApplication) {
         in: 'header',
       },
       'JWT-auth', // This name here is important for matching up with @ApiBearerAuth() in your controller!
+    )
+    .addApiKey(
+      {
+        type: 'apiKey',
+        name: 'x-api-key',
+        in: 'header',
+        description: 'Admin API Key',
+      },
+      'Api-auth',
     )
     .build();
 
