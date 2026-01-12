@@ -327,7 +327,7 @@ export class CompanyProjectController {
     let resSuccess = true;
 
     try {
-      const result = await Promisify<any>(
+      const result = await Promisify<ProjectUser>(
         this.companyProjectService.addUserToProject(
           projectId,
           userId,
@@ -365,7 +365,7 @@ export class CompanyProjectController {
     let resSuccess = true;
 
     try {
-      const result = await Promisify<any>(
+      const result = await Promisify<{ removed: boolean }>(
         this.companyProjectService.removeUserFromProject(projectId, userId),
       );
       resData = result;
