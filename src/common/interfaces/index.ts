@@ -10,3 +10,7 @@ export interface JSONObject {
 }
 
 export type JSONArray = Array<JSONValue>;
+
+export interface JwtPayload {
+  userId: number;
+}

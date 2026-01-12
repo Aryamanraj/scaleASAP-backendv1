@@ -165,4 +165,25 @@ export class UserService {
       return { error: error, data: null };
     }
   }
+
+  async getCurrentUser(userId: number): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `UserService.getCurrentUser: Fetching user with UserID=${userId}`,
+      );
+
+      const user = await Promisify<User>(
+        this.userRepoService.get({ where: { UserID: userId } }, true),
+      );
+
+      this.logger.info(
+        `UserService.getCurrentUser: Successfully fetched user with UserID=${userId}`,
+      );
+
+      return { error: null, data: user };
+    } catch (error) {
+      this.logger.error(`UserService.getCurrentUser: Error - ${error.stack}`);
+      return { error: error, data: null };
+    }
+  }
 }

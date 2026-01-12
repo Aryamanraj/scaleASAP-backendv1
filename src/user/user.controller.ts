@@ -16,6 +16,10 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
+import {
+  CurrentUser,
+  CurrentUserData,
+} from '../common/decorators/current-user.decorator';
 import { ApiOkResponseGeneric } from '../common/decorators/apiOkResponse.decorator';
 import { makeResponse } from '../common/helpers/reponseMaker';
 import { Promisify } from '../common/helpers/promisifier';
@@ -25,6 +29,7 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
+import { UserAuthGuard } from '../auth/guards/user-auth.guard';
 
 @Controller('users')
 @ApiTags('Users')
@@ -186,6 +191,42 @@ export class UserController {
         ? error.status
         : HttpStatus.INTERNAL_SERVER_ERROR;
       resMessage = `Failed to fetch user projects : ${
+        error?.message ?? 'Unknown error'
+      }`;
+      resSuccess = false;
+    }
+
+    makeResponse(res, resStatus, resSuccess, resMessage, resData);
+  }
+
+  @Get('me')
+  @ApiTags('Users')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(UserAuthGuard)
+  @ApiOperation({ summary: 'Get current logged-in user details' })
+  @ApiOkResponseGeneric({
+    type: User,
+    description: 'Current user retrieved successfully',
+  })
+  async getCurrentUser(
+    @CurrentUser() currentUser: CurrentUserData,
+    @Res() res: Response,
+  ) {
+    let resStatus = HttpStatus.OK;
+    let resMessage = 'Current user retrieved successfully';
+    let resData = null;
+    let resSuccess = true;
+
+    try {
+      const user = await Promisify<User>(
+        this.userService.getCurrentUser(currentUser.userId),
+      );
+      resData = user;
+    } catch (error) {
+      resStatus = error?.status
+        ? error.status
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+      resMessage = `Failed to fetch current user : ${
         error?.message ?? 'Unknown error'
       }`;
       resSuccess = false;
