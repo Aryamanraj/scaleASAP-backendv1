@@ -10,10 +10,6 @@ export default () => {
     REDIS_HOST: process.env.REDIS_HOST,
     REDIS_PORT: process.env.REDIS_PORT,
     REDIS_PASSWORD: process.env.REDIS_PASSWORD,
-    NODE_URL: process.env.NODE_URL,
-    NODE_WSS_URL: process.env.NODE_WSS_URL,
     ADMIN_API_KEY: process.env.ADMIN_API_KEY,
-    ADMIN_PVT_KEY: process.env.ADMIN_PVT_KEY,
-    NETWORK_NAME: process.env.NETWORK_NAME,
   };
 };

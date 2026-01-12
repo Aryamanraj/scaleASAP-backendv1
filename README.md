@@ -80,12 +80,6 @@ REDIS_PASSWORD=your_redis_password
 REDIS_USER=your_redis_user
 PORT=your_port
 PORT_INDEXER=your_indexer_port
-NODE_URL=your_node_url
-NODE_WSS_URL=your_node_wss_url
-PRIVATE_KEY=your_private_key
-ADMIN_API_KEY=your_admin_api_key
-ADMIN_PVT_KEY=your_admin_private_key
-NETWORK_NAME=your_network_name
 ```
 
 ## Running the Application
