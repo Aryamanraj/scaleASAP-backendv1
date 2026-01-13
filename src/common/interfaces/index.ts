@@ -14,3 +14,6 @@ export type JSONArray = Array<JSONValue>;
 export interface JwtPayload {
   userId: number;
 }
+
+// Re-export enricher interfaces
+export * from './enricher.interfaces';

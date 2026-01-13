@@ -4,18 +4,7 @@ import { Logger } from 'winston';
 import { LayerSnapshotRepoService } from '../../repo/layer-snapshot-repo.service';
 import { Promisify } from '../../common/helpers/promisifier';
 import { LayerSnapshot } from '../../repo/entities/layer-snapshot.entity';
-import { ResultWithError } from '../../common/interfaces';
-
-interface CreateSnapshotParams {
-  ProjectID: number;
-  PersonID: number;
-  LayerNumber: number;
-  ComposerModuleKey: string;
-  ComposerVersion: string;
-  CompiledJson: any;
-  GeneratedAt: Date;
-  ModuleRunID: number;
-}
+import { ResultWithError, CreateSnapshotParams } from '../../common/interfaces';
 
 @Injectable()
 export class LayerSnapshotWriterService {

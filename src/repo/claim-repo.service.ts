@@ -15,21 +15,6 @@ import { ResultWithError } from '../common/interfaces';
 import { GenericError } from '../common/errors/Generic.error';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-interface InsertClaimParams {
-  ProjectID: number;
-  PersonID: number;
-  ClaimType: string;
-  GroupKey?: string;
-  ValueJson: any;
-  Confidence: number;
-  ObservedAt?: Date;
-  ValidFrom?: Date;
-  ValidTo?: Date;
-  SourceDocumentID: number;
-  ModuleRunID: number;
-  SchemaVersion: string;
-}
-
 @Injectable()
 export class ClaimRepoService {
   private claimRepo: Repository<Claim>;

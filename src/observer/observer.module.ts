@@ -21,6 +21,7 @@ import { ApifyService } from './services/apify.service';
 import { LinkedinDocumentWriterService } from './services/linkedin-document-writer.service';
 import { LinkedinConnectorModule } from '../connectors/linkedin/linkedin.module';
 import { DocumentsModule } from '../documents/documents.module';
+import { LinkedinCoreIdentityModule } from '../enrichers/linkedin-core-identity/linkedin-core-identity.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { DocumentsModule } from '../documents/documents.module';
     RpcModule,
     LinkedinConnectorModule,
     DocumentsModule,
+    LinkedinCoreIdentityModule,
   ],
   providers: [
     LogConsumer,

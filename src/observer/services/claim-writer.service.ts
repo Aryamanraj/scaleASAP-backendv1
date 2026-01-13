@@ -4,23 +4,8 @@ import { Logger } from 'winston';
 import { ClaimRepoService } from '../../repo/claim-repo.service';
 import { Promisify } from '../../common/helpers/promisifier';
 import { Claim } from '../../repo/entities/claim.entity';
-import { ResultWithError } from '../../common/interfaces';
+import { ResultWithError, InsertClaimParams } from '../../common/interfaces';
 import { IsNull } from 'typeorm';
-
-interface InsertClaimParams {
-  ProjectID: number;
-  PersonID: number;
-  ClaimType: string;
-  GroupKey: string | null;
-  ValueJson: any;
-  Confidence: number;
-  ObservedAt: Date | null;
-  ValidFrom: Date | null;
-  ValidTo: Date | null;
-  SourceDocumentID: number;
-  ModuleRunID: number;
-  SchemaVersion: string;
-}
 
 @Injectable()
 export class ClaimWriterService {
