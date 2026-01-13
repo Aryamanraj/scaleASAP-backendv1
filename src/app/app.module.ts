@@ -16,6 +16,7 @@ import { UserModule } from '../user/user.module';
 import { PersonModule } from '../person/person.module';
 import { ModuleRunnerModule } from '../module-runner/module-runner.module';
 import { InsightsModule } from '../insights/insights.module';
+import { DocumentsModule } from '../documents/documents.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { InsightsModule } from '../insights/insights.module';
     PersonModule,
     ModuleRunnerModule,
     InsightsModule,
+    DocumentsModule,
   ],
   controllers: [],
   providers: [],

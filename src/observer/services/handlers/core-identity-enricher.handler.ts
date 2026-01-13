@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { ModuleRun } from '../../../repo/entities/module-run.entity';
-import { DocumentReaderService } from '../document-reader.service';
+import { DocumentsService } from '../../../documents/documents.service';
 import { ClaimWriterService } from '../claim-writer.service';
 import { Promisify } from '../../../common/helpers/promisifier';
 import { Document } from '../../../repo/entities/document.entity';
@@ -18,7 +18,7 @@ import { ResultWithError } from '../../../common/interfaces';
 export class CoreIdentityEnricherHandler {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
-    private documentReaderService: DocumentReaderService,
+    private documentsService: DocumentsService,
     private claimWriterService: ClaimWriterService,
   ) {}
 
@@ -36,19 +36,25 @@ export class CoreIdentityEnricherHandler {
       // Parse input config
       const input: CoreIdentityEnricherInput = run.InputConfigJson;
       const documentSource = input.documentSource || DocumentSource.MANUAL;
+      const documentKind = input.documentKind;
       const schemaVersion = input.schemaVersion;
 
       if (!schemaVersion) {
         throw new Error('schemaVersion is required in InputConfigJson');
       }
 
-      // Fetch latest document by source
+      if (!documentKind) {
+        throw new Error('documentKind is required in InputConfigJson');
+      }
+
+      // Fetch latest valid document by source and kind
       const document = await Promisify<Document>(
-        this.documentReaderService.getLatestBySource(
-          run.ProjectID,
-          run.PersonID,
-          documentSource,
-        ),
+        this.documentsService.getLatestValidDocument({
+          projectId: run.ProjectID,
+          personId: run.PersonID,
+          source: documentSource,
+          documentKind: documentKind,
+        }),
       );
 
       this.logger.info(

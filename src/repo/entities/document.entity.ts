@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Project } from './project.entity';
@@ -14,6 +15,15 @@ import { Person } from './person.entity';
 import { ModuleRun } from './module-run.entity';
 
 @Entity({ name: 'Documents' })
+@Index('IDX_DOCUMENT_LATEST_VALID', [
+  'ProjectID',
+  'PersonID',
+  'Source',
+  'DocumentKind',
+  'IsValid',
+  'CapturedAt',
+])
+@Index('IDX_DOCUMENT_CREATED_AT', ['CreatedAt'])
 export class Document extends BaseEntity {
   @ApiProperty()
   @PrimaryGeneratedColumn()
@@ -40,6 +50,14 @@ export class Document extends BaseEntity {
   ContentType: string;
 
   @ApiProperty()
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  DocumentKind: string;
+
+  @ApiProperty()
+  @Column({ type: 'boolean', default: true })
+  IsValid: boolean;
+
+  @ApiProperty()
   @Column({ type: 'text', nullable: false })
   StorageUri: string;
 
@@ -58,6 +76,10 @@ export class Document extends BaseEntity {
   @ApiProperty()
   @Column({ type: 'jsonb', nullable: true })
   PayloadJson: any;
+
+  @ApiProperty()
+  @Column({ type: 'jsonb', nullable: true })
+  InvalidatedMetaJson: any;
 
   @ApiProperty()
   @CreateDateColumn({

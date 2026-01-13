@@ -6,12 +6,14 @@
 export interface ManualDocumentConnectorInput {
   source: string; // DocumentSource.MANUAL
   contentType: string;
+  documentKind: string; // DocumentKind enum value
   payload: any;
   capturedAt?: string; // ISO date string
 }
 
 export interface CoreIdentityEnricherInput {
   documentSource?: string; // default 'MANUAL'
+  documentKind: string; // DocumentKind enum value (e.g., 'LINKEDIN_PROFILE')
   schemaVersion: string;
 }
 

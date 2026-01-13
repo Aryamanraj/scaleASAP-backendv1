@@ -5,7 +5,7 @@ import { DocumentRepoService } from '../../repo/document-repo.service';
 import { Promisify } from '../../common/helpers/promisifier';
 import { ResultWithError } from '../../common/interfaces';
 import { Document } from '../../repo/entities/document.entity';
-import { DocumentSource } from '../../common/types/claim-types';
+import { DocumentSource } from '../../common/types/document.types';
 import { sha256Hex } from '../../common/helpers/sha256';
 import { WriteLinkedinDocumentParams } from '../../common/interfaces/linkedin.interfaces';
 
@@ -36,11 +36,14 @@ export class LinkedinDocumentWriterService {
           Source: DocumentSource.LINKEDIN,
           SourceRef: params.sourceRef,
           ContentType: params.documentType,
+          DocumentKind: params.documentType, // Use documentType as DocumentKind (linkedin_profile or linkedin_posts)
+          IsValid: true,
           StorageUri: params.storageUri,
           Hash: hash,
           CapturedAt: new Date(),
           ModuleRunID: params.moduleRunId,
           PayloadJson: params.payloadJson,
+          InvalidatedMetaJson: null,
         }),
       );
 

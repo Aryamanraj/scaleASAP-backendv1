@@ -46,6 +46,11 @@ export class ManualDocumentConnectorHandler {
         );
       }
 
+      // Validate documentKind
+      if (!input.documentKind) {
+        throw new Error('documentKind is required in InputConfigJson');
+      }
+
       // Calculate hash
       const payloadString = JSON.stringify(input.payload);
       const hash = sha256Hex(payloadString);
@@ -62,6 +67,9 @@ export class ManualDocumentConnectorHandler {
         Source: input.source,
         SourceRef: null,
         ContentType: input.contentType,
+        DocumentKind: input.documentKind,
+        IsValid: true,
+        InvalidatedMetaJson: null,
         StorageUri: 'inline://document',
         Hash: hash,
         CapturedAt: capturedAt,

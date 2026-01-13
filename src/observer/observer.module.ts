@@ -20,6 +20,7 @@ import { LayerSnapshotWriterService } from './services/layer-snapshot-writer.ser
 import { ApifyService } from './services/apify.service';
 import { LinkedinDocumentWriterService } from './services/linkedin-document-writer.service';
 import { LinkedinConnectorModule } from '../connectors/linkedin/linkedin.module';
+import { DocumentsModule } from '../documents/documents.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { LinkedinConnectorModule } from '../connectors/linkedin/linkedin.module'
     RepoModule,
     RpcModule,
     LinkedinConnectorModule,
+    DocumentsModule,
   ],
   providers: [
     LogConsumer,
