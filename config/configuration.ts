@@ -12,5 +12,6 @@ export default () => {
     REDIS_PASSWORD: process.env.REDIS_PASSWORD,
     ADMIN_API_KEY: process.env.ADMIN_API_KEY,
     JWT_SECRET: process.env.JWT_SECRET || 'default-secret-change-in-production',
+    APIFY_TOKEN: process.env.APIFY_TOKEN,
   };
 };

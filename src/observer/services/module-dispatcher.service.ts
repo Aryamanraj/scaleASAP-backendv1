@@ -6,6 +6,13 @@ import { NoopModuleHandler } from './handlers/noop-module.handler';
 import { ManualDocumentConnectorHandler } from './handlers/manual-document-connector.handler';
 import { CoreIdentityEnricherHandler } from './handlers/core-identity-enricher.handler';
 import { Layer1ComposerHandler } from './handlers/layer-1-composer.handler';
+import { LinkedinProfileConnectorHandler } from '../../connectors/linkedin/handlers/linkedin-profile-connector.handler';
+import { LinkedinPostsConnectorHandler } from '../../connectors/linkedin/handlers/linkedin-posts-connector.handler';
+import {
+  LINKEDIN_PROFILE_CONNECTOR_KEY,
+  LINKEDIN_POSTS_CONNECTOR_KEY,
+} from '../../common/constants/linkedin.constants';
+import { ResultWithError } from '../../common/interfaces';
 
 @Injectable()
 export class ModuleDispatcherService {
@@ -15,9 +22,11 @@ export class ModuleDispatcherService {
     private manualDocumentConnectorHandler: ManualDocumentConnectorHandler,
     private coreIdentityEnricherHandler: CoreIdentityEnricherHandler,
     private layer1ComposerHandler: Layer1ComposerHandler,
+    private linkedinProfileConnectorHandler: LinkedinProfileConnectorHandler,
+    private linkedinPostsConnectorHandler: LinkedinPostsConnectorHandler,
   ) {}
 
-  async execute(run: ModuleRun): Promise<{ error: any; data: any }> {
+  async execute(run: ModuleRun): Promise<ResultWithError> {
     try {
       this.logger.info(
         `ModuleDispatcherService.execute: Dispatching run for module ${run.ModuleKey}`,
@@ -34,6 +43,10 @@ export class ModuleDispatcherService {
           return await this.coreIdentityEnricherHandler.execute(run);
         case 'layer-1-composer':
           return await this.layer1ComposerHandler.execute(run);
+        case LINKEDIN_PROFILE_CONNECTOR_KEY:
+          return await this.linkedinProfileConnectorHandler.execute(run);
+        case LINKEDIN_POSTS_CONNECTOR_KEY:
+          return await this.linkedinPostsConnectorHandler.execute(run);
         default:
           throw new Error(
             `No handler registered for module key: ${run.ModuleKey}`,

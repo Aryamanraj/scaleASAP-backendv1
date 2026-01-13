@@ -11,6 +11,7 @@ import {
   CoreIdentityPayload,
 } from '../../../common/interfaces/module-inputs.interface';
 import { DocumentSource } from '../../../common/types/claim-types';
+import { ResultWithError } from '../../../common/interfaces';
 
 @Injectable()
 export class ManualDocumentConnectorHandler {
@@ -19,7 +20,7 @@ export class ManualDocumentConnectorHandler {
     private documentRepoService: DocumentRepoService,
   ) {}
 
-  async execute(run: ModuleRun): Promise<{ error: any; data: any }> {
+  async execute(run: ModuleRun): Promise<ResultWithError> {
     try {
       this.logger.info(
         `ManualDocumentConnectorHandler.execute: Processing module run`,

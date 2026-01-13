@@ -12,6 +12,7 @@ import {
   CoreIdentityPayload,
 } from '../../../common/interfaces/module-inputs.interface';
 import { ClaimType, DocumentSource } from '../../../common/types/claim-types';
+import { ResultWithError } from '../../../common/interfaces';
 
 @Injectable()
 export class CoreIdentityEnricherHandler {
@@ -21,7 +22,7 @@ export class CoreIdentityEnricherHandler {
     private claimWriterService: ClaimWriterService,
   ) {}
 
-  async execute(run: ModuleRun): Promise<{ error: any; data: any }> {
+  async execute(run: ModuleRun): Promise<ResultWithError> {
     try {
       this.logger.info(
         `CoreIdentityEnricherHandler.execute: Processing module run`,

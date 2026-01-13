@@ -2,12 +2,13 @@ import { Injectable, Inject } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { ModuleRun } from '../../../repo/entities/module-run.entity';
+import { ResultWithError } from '../../../common/interfaces';
 
 @Injectable()
 export class NoopModuleHandler {
   constructor(@Inject(WINSTON_MODULE_PROVIDER) private logger: Logger) {}
 
-  async execute(run: ModuleRun): Promise<{ error: any; data: any }> {
+  async execute(run: ModuleRun): Promise<ResultWithError> {
     try {
       this.logger.info(
         `NoopModuleHandler.execute: Processing noop module run`,

@@ -214,6 +214,10 @@ export class ModuleRunnerService {
         InputConfigJson: dto.inputConfigJson,
       };
 
+      this.logger.info('ModuleRunnerService.createModuleRun: Creating run', {
+        data: moduleRunData,
+      });
+
       const moduleRun = await Promisify<ModuleRun>(
         this.moduleRunRepoService.create(moduleRunData),
       );

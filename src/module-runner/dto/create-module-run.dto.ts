@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  MaxLength,
+  IsNotEmpty,
+  IsObject,
+} from 'class-validator';
 
 export class CreateModuleRunDto {
   @ApiProperty({ maxLength: 128 })
@@ -13,10 +20,13 @@ export class CreateModuleRunDto {
   @MaxLength(32)
   moduleVersion?: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: Object })
+  @IsNotEmpty()
+  @IsObject()
   inputConfigJson: any;
 
   @ApiProperty()
   @IsNumber()
+  @IsNotEmpty()
   triggeredByUserId: number;
 }

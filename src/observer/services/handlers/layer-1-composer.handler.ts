@@ -9,6 +9,7 @@ import { Claim } from '../../../repo/entities/claim.entity';
 import { LayerSnapshot } from '../../../repo/entities/layer-snapshot.entity';
 import { Layer1ComposerInput } from '../../../common/interfaces/module-inputs.interface';
 import { ClaimType } from '../../../common/types/claim-types';
+import { ResultWithError } from '../../../common/interfaces';
 
 @Injectable()
 export class Layer1ComposerHandler {
@@ -18,7 +19,7 @@ export class Layer1ComposerHandler {
     private layerSnapshotWriterService: LayerSnapshotWriterService,
   ) {}
 
-  async execute(run: ModuleRun): Promise<{ error: any; data: any }> {
+  async execute(run: ModuleRun): Promise<ResultWithError> {
     try {
       this.logger.info(`Layer1ComposerHandler.execute: Processing module run`, {
         moduleRunId: run.ModuleRunID,

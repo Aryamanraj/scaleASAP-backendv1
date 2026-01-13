@@ -1,5 +1,6 @@
 import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { QueueNames } from '../common/constants';
 import { RepoModule } from '../repo/repo.module';
 import { LogConsumer } from './consumers/log.consumer';
@@ -16,6 +17,9 @@ import { Layer1ComposerHandler } from './services/handlers/layer-1-composer.hand
 import { DocumentReaderService } from './services/document-reader.service';
 import { ClaimWriterService } from './services/claim-writer.service';
 import { LayerSnapshotWriterService } from './services/layer-snapshot-writer.service';
+import { ApifyService } from './services/apify.service';
+import { LinkedinDocumentWriterService } from './services/linkedin-document-writer.service';
+import { LinkedinConnectorModule } from '../connectors/linkedin/linkedin.module';
 
 @Module({
   imports: [
@@ -24,8 +28,10 @@ import { LayerSnapshotWriterService } from './services/layer-snapshot-writer.ser
       { name: QueueNames.LATE_LOGS },
       { name: QueueNames.MODULE_RUNS },
     ),
+    HttpModule,
     RepoModule,
     RpcModule,
+    LinkedinConnectorModule,
   ],
   providers: [
     LogConsumer,
@@ -41,6 +47,8 @@ import { LayerSnapshotWriterService } from './services/layer-snapshot-writer.ser
     DocumentReaderService,
     ClaimWriterService,
     LayerSnapshotWriterService,
+    ApifyService,
+    LinkedinDocumentWriterService,
   ],
   controllers: [],
 })
