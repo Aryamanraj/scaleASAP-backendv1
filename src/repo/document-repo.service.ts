@@ -77,12 +77,9 @@ export class DocumentRepoService {
 
   async create(document: Partial<Document>): Promise<ResultWithError> {
     try {
-      this.logger.info('Creating document', {
-        projectId: document.ProjectID,
-        personId: document.PersonID,
-        source: document.Source,
-        contentType: document.ContentType,
-      });
+      this.logger.info(
+        `Creating document [projectId=${document.ProjectID}, personId=${document.PersonID}, source=${document.Source}, contentType=${document.ContentType}]`,
+      );
 
       const newDocument = this.documentRepo.create(document);
       const result = await this.documentRepo.save(newDocument);
@@ -90,12 +87,9 @@ export class DocumentRepoService {
       this.logger.info(`Document created [DocumentID: ${result.DocumentID}]`);
       return { data: result, error: null };
     } catch (error) {
-      this.logger.error('Error in creating document', {
-        projectId: document.ProjectID,
-        personId: document.PersonID,
-        error: error.message,
-        stack: error.stack,
-      });
+      this.logger.error(
+        `Error in creating document [projectId=${document.ProjectID}, personId=${document.PersonID}, error=${error.message}, stack=${error.stack}]`,
+      );
       return { data: null, error };
     }
   }
@@ -105,21 +99,22 @@ export class DocumentRepoService {
     document: QueryDeepPartialEntity<Document>,
   ): Promise<ResultWithError> {
     try {
-      this.logger.info('Updating document', {
-        where: JSON.stringify(where),
-        hasPayloadJson: !!document.PayloadJson,
-      });
+      this.logger.info(
+        `Updating document [where=${JSON.stringify(
+          where,
+        )}, hasPayloadJson=${!!document.PayloadJson}]`,
+      );
 
       const result = await this.documentRepo.update(where, document);
 
       this.logger.info(`Document updated [affected: ${result.affected}]`);
       return { data: result, error: null };
     } catch (error) {
-      this.logger.error('Error in updating document', {
-        where: JSON.stringify(where),
-        error: error.message,
-        stack: error.stack,
-      });
+      this.logger.error(
+        `Error in updating document [where=${JSON.stringify(where)}, error=${
+          error.message
+        }, stack=${error.stack}]`,
+      );
       return { data: null, error };
     }
   }

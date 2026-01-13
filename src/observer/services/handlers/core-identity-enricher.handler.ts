@@ -51,10 +51,9 @@ export class CoreIdentityEnricherHandler {
         ),
       );
 
-      this.logger.info(`CoreIdentityEnricherHandler.execute: Found document`, {
-        documentId: document.DocumentID,
-        capturedAt: document.CapturedAt,
-      });
+      this.logger.info(
+        `CoreIdentityEnricherHandler.execute: Found document [documentId=${document.DocumentID}, capturedAt=${document.CapturedAt}]`,
+      );
 
       // Read payload
       const payload: CoreIdentityPayload = document.PayloadJson;
@@ -151,9 +150,11 @@ export class CoreIdentityEnricherHandler {
       if (payload.career && Array.isArray(payload.career)) {
         for (const role of payload.career) {
           if (!role.company || !role.title) {
-            this.logger.warn('Skipping career role missing company or title', {
-              role,
-            });
+            this.logger.warn(
+              `Skipping career role missing company or title [role=${JSON.stringify(
+                role,
+              )}]`,
+            );
             continue;
           }
 
@@ -188,7 +189,11 @@ export class CoreIdentityEnricherHandler {
       if (payload.certifications && Array.isArray(payload.certifications)) {
         for (const cert of payload.certifications) {
           if (!cert.name) {
-            this.logger.warn('Skipping certification missing name', { cert });
+            this.logger.warn(
+              `Skipping certification missing name [cert=${JSON.stringify(
+                cert,
+              )}]`,
+            );
             continue;
           }
 
@@ -220,10 +225,9 @@ export class CoreIdentityEnricherHandler {
       }
 
       this.logger.info(
-        `CoreIdentityEnricherHandler.execute: Successfully created ${claimsCreated.length} claims`,
-        {
-          claimIds: claimsCreated,
-        },
+        `CoreIdentityEnricherHandler.execute: Successfully created ${
+          claimsCreated.length
+        } claims [claimIds=${JSON.stringify(claimsCreated)}]`,
       );
 
       return {
@@ -231,11 +235,9 @@ export class CoreIdentityEnricherHandler {
         data: { claimsCreated: claimsCreated.length, claimIds: claimsCreated },
       };
     } catch (error) {
-      this.logger.error('CoreIdentityEnricherHandler.execute: Error', {
-        error: error.message,
-        stack: error.stack,
-        moduleRunId: run.ModuleRunID,
-      });
+      this.logger.error(
+        `CoreIdentityEnricherHandler.execute: Error [error=${error.message}, moduleRunId=${run.ModuleRunID}, stack=${error.stack}]`,
+      );
       return { error: error, data: null };
     }
   }

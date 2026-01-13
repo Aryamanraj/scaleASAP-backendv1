@@ -21,11 +21,9 @@ export class Layer1ComposerHandler {
 
   async execute(run: ModuleRun): Promise<ResultWithError> {
     try {
-      this.logger.info(`Layer1ComposerHandler.execute: Processing module run`, {
-        moduleRunId: run.ModuleRunID,
-        projectId: run.ProjectID,
-        personId: run.PersonID,
-      });
+      this.logger.info(
+        `Layer1ComposerHandler.execute: Processing module run [moduleRunId=${run.ModuleRunID}, projectId=${run.ProjectID}, personId=${run.PersonID}]`,
+      );
 
       // Parse input config
       const input: Layer1ComposerInput = run.InputConfigJson;
@@ -108,12 +106,7 @@ export class Layer1ComposerHandler {
       );
 
       this.logger.info(
-        `Layer1ComposerHandler.execute: Layer snapshot created successfully`,
-        {
-          layerSnapshotId: snapshot.LayerSnapshotID,
-          snapshotVersion: snapshot.SnapshotVersion,
-          layerNumber: snapshot.LayerNumber,
-        },
+        `Layer1ComposerHandler.execute: Layer snapshot created successfully [layerSnapshotId=${snapshot.LayerSnapshotID}, snapshotVersion=${snapshot.SnapshotVersion}, layerNumber=${snapshot.LayerNumber}]`,
       );
 
       return {
@@ -124,11 +117,9 @@ export class Layer1ComposerHandler {
         },
       };
     } catch (error) {
-      this.logger.error('Layer1ComposerHandler.execute: Error', {
-        error: error.message,
-        stack: error.stack,
-        moduleRunId: run.ModuleRunID,
-      });
+      this.logger.error(
+        `Layer1ComposerHandler.execute: Error [error=${error.message}, moduleRunId=${run.ModuleRunID}, stack=${error.stack}]`,
+      );
       return { error: error, data: null };
     }
   }

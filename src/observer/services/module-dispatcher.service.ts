@@ -29,8 +29,7 @@ export class ModuleDispatcherService {
   async execute(run: ModuleRun): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `ModuleDispatcherService.execute: Dispatching run for module ${run.ModuleKey}`,
-        { moduleRunId: run.ModuleRunID, moduleKey: run.ModuleKey },
+        `ModuleDispatcherService.execute: Dispatching run for module ${run.ModuleKey} [moduleRunId=${run.ModuleRunID}, moduleKey=${run.ModuleKey}]`,
       );
 
       // Dispatch based on module key
@@ -53,10 +52,9 @@ export class ModuleDispatcherService {
           );
       }
     } catch (error) {
-      this.logger.error('ModuleDispatcherService.execute: Error', {
-        error: error.message,
-        moduleRunId: run.ModuleRunID,
-      });
+      this.logger.error(
+        `ModuleDispatcherService.execute: Error [error=${error.message}, moduleRunId=${run.ModuleRunID}]`,
+      );
       return { error: error, data: null };
     }
   }

@@ -34,7 +34,11 @@ export class ModuleRunnerService {
 
   async registerModule(dto: RegisterModuleDto): Promise<ResultWithError> {
     try {
-      this.logger.info('ModuleRunnerService.registerModule called', { dto });
+      this.logger.info(
+        `ModuleRunnerService.registerModule called [dto=${JSON.stringify(
+          dto,
+        )}]`,
+      );
 
       const moduleData = {
         ModuleKey: dto.moduleKey,
@@ -48,22 +52,27 @@ export class ModuleRunnerService {
         this.moduleRepoService.create(moduleData),
       );
 
-      this.logger.info('ModuleRunnerService.registerModule success', {
-        moduleId: module.ModuleID,
-      });
+      this.logger.info(
+        `ModuleRunnerService.registerModule success [moduleId=${module.ModuleID}]`,
+      );
       return { error: null, data: module };
     } catch (error) {
-      this.logger.error('ModuleRunnerService.registerModule error', {
-        error: error.message,
-        dto,
-      });
+      this.logger.error(
+        `ModuleRunnerService.registerModule error [error=${
+          error.message
+        }, dto=${JSON.stringify(dto)}]`,
+      );
       return { error: error, data: null };
     }
   }
 
   async listModules(filters: ListModulesQueryDto): Promise<ResultWithError> {
     try {
-      this.logger.info('ModuleRunnerService.listModules called', { filters });
+      this.logger.info(
+        `ModuleRunnerService.listModules called [filters=${JSON.stringify(
+          filters,
+        )}]`,
+      );
 
       const whereConditions: any = {};
 
@@ -83,14 +92,14 @@ export class ModuleRunnerService {
         this.moduleRepoService.getAll({ where: whereConditions }),
       );
 
-      this.logger.info('ModuleRunnerService.listModules success', {
-        count: modules.length,
-      });
+      this.logger.info(
+        `ModuleRunnerService.listModules success [count=${modules.length}]`,
+      );
       return { error: null, data: modules };
     } catch (error) {
-      this.logger.error('ModuleRunnerService.listModules error', {
-        error: error.message,
-      });
+      this.logger.error(
+        `ModuleRunnerService.listModules error [error=${error.message}]`,
+      );
       return { error: error, data: null };
     }
   }
@@ -100,10 +109,11 @@ export class ModuleRunnerService {
     dto: UpdateModuleDto,
   ): Promise<ResultWithError> {
     try {
-      this.logger.info('ModuleRunnerService.updateModule called', {
-        moduleId,
-        dto,
-      });
+      this.logger.info(
+        `ModuleRunnerService.updateModule called [moduleId=${moduleId}, dto=${JSON.stringify(
+          dto,
+        )}]`,
+      );
 
       const updateData: any = {};
 
@@ -124,15 +134,14 @@ export class ModuleRunnerService {
         this.moduleRepoService.get({ where: { ModuleID: moduleId } }, true),
       );
 
-      this.logger.info('ModuleRunnerService.updateModule success', {
-        moduleId,
-      });
+      this.logger.info(
+        `ModuleRunnerService.updateModule success [moduleId=${moduleId}]`,
+      );
       return { error: null, data: module };
     } catch (error) {
-      this.logger.error('ModuleRunnerService.updateModule error', {
-        error: error.message,
-        moduleId,
-      });
+      this.logger.error(
+        `ModuleRunnerService.updateModule error [error=${error.message}, moduleId=${moduleId}]`,
+      );
       return { error: error, data: null };
     }
   }
@@ -143,11 +152,11 @@ export class ModuleRunnerService {
     dto: CreateModuleRunDto,
   ): Promise<ResultWithError> {
     try {
-      this.logger.info('ModuleRunnerService.createModuleRun called', {
-        projectId,
-        personId,
-        dto,
-      });
+      this.logger.info(
+        `ModuleRunnerService.createModuleRun called [projectId=${projectId}, personId=${personId}, dto=${JSON.stringify(
+          dto,
+        )}]`,
+      );
 
       // Validate project exists
       await Promisify(
@@ -214,9 +223,11 @@ export class ModuleRunnerService {
         InputConfigJson: dto.inputConfigJson,
       };
 
-      this.logger.info('ModuleRunnerService.createModuleRun: Creating run', {
-        data: moduleRunData,
-      });
+      this.logger.info(
+        `ModuleRunnerService.createModuleRun: Creating run [data=${JSON.stringify(
+          moduleRunData,
+        )}]`,
+      );
 
       const moduleRun = await Promisify<ModuleRun>(
         this.moduleRunRepoService.create(moduleRunData),
@@ -227,39 +238,36 @@ export class ModuleRunnerService {
         moduleRunId: moduleRun.ModuleRunID,
       });
 
-      this.logger.info('ModuleRunnerService.createModuleRun success', {
-        moduleRunId: moduleRun.ModuleRunID,
-      });
+      this.logger.info(
+        `ModuleRunnerService.createModuleRun success [moduleRunId=${moduleRun.ModuleRunID}]`,
+      );
       return { error: null, data: moduleRun };
     } catch (error) {
-      this.logger.error('ModuleRunnerService.createModuleRun error', {
-        error: error.message,
-        projectId,
-        personId,
-      });
+      this.logger.error(
+        `ModuleRunnerService.createModuleRun error [error=${error.message}, projectId=${projectId}, personId=${personId}]`,
+      );
       return { error: error, data: null };
     }
   }
 
   async getModuleRunById(runId: number): Promise<ResultWithError> {
     try {
-      this.logger.info('ModuleRunnerService.getModuleRunById called', {
-        runId,
-      });
+      this.logger.info(
+        `ModuleRunnerService.getModuleRunById called [runId=${runId}]`,
+      );
 
       const moduleRun = await Promisify<ModuleRun>(
         this.moduleRunRepoService.get({ where: { ModuleRunID: runId } }, true),
       );
 
-      this.logger.info('ModuleRunnerService.getModuleRunById success', {
-        runId,
-      });
+      this.logger.info(
+        `ModuleRunnerService.getModuleRunById success [runId=${runId}]`,
+      );
       return { error: null, data: moduleRun };
     } catch (error) {
-      this.logger.error('ModuleRunnerService.getModuleRunById error', {
-        error: error.message,
-        runId,
-      });
+      this.logger.error(
+        `ModuleRunnerService.getModuleRunById error [error=${error.message}, runId=${runId}]`,
+      );
       return { error: error, data: null };
     }
   }
@@ -270,11 +278,11 @@ export class ModuleRunnerService {
     filters: ListModuleRunsQueryDto,
   ): Promise<ResultWithError> {
     try {
-      this.logger.info('ModuleRunnerService.listModuleRuns called', {
-        projectId,
-        personId,
-        filters,
-      });
+      this.logger.info(
+        `ModuleRunnerService.listModuleRuns called [projectId=${projectId}, personId=${personId}, filters=${JSON.stringify(
+          filters,
+        )}]`,
+      );
 
       const whereConditions: any = {
         ProjectID: projectId,
@@ -301,18 +309,14 @@ export class ModuleRunnerService {
         }),
       );
 
-      this.logger.info('ModuleRunnerService.listModuleRuns success', {
-        projectId,
-        personId,
-        count: moduleRuns.length,
-      });
+      this.logger.info(
+        `ModuleRunnerService.listModuleRuns success [projectId=${projectId}, personId=${personId}, count=${moduleRuns.length}]`,
+      );
       return { error: null, data: moduleRuns };
     } catch (error) {
-      this.logger.error('ModuleRunnerService.listModuleRuns error', {
-        error: error.message,
-        projectId,
-        personId,
-      });
+      this.logger.error(
+        `ModuleRunnerService.listModuleRuns error [error=${error.message}, projectId=${projectId}, personId=${personId}]`,
+      );
       return { error: error, data: null };
     }
   }

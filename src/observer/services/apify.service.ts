@@ -142,11 +142,9 @@ export class ApifyService {
         await this.sleep(APIFY_POLL_INTERVAL_MS);
       }
     } catch (error) {
-      this.logger.error(`ApifyService.waitForRun: Error - ${error.message}`, {
-        actorId,
-        runId,
-        error: error.stack,
-      });
+      this.logger.error(
+        `ApifyService.waitForRun: Error - ${error.message} [actorId=${actorId}, runId=${runId}, stack=${error.stack}]`,
+      );
       return { error: error, data: null };
     }
   }

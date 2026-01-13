@@ -111,11 +111,9 @@ export class LinkedinProfileConnectorHandler {
         },
       };
     } catch (error) {
-      this.logger.error('LinkedinProfileConnectorHandler.execute: Error', {
-        error: error.message,
-        stack: error.stack,
-        moduleRunId: run.ModuleRunID,
-      });
+      this.logger.error(
+        `LinkedinProfileConnectorHandler.execute: Error [error=${error.message}, moduleRunId=${run.ModuleRunID}, stack=${error.stack}]`,
+      );
       return { error: error, data: null };
     }
   }

@@ -83,11 +83,9 @@ export class ManualDocumentConnectorHandler {
 
       return { error: null, data: { documentId: document.DocumentID } };
     } catch (error) {
-      this.logger.error('ManualDocumentConnectorHandler.execute: Error', {
-        error: error.message,
-        stack: error.stack,
-        moduleRunId: run.ModuleRunID,
-      });
+      this.logger.error(
+        `ManualDocumentConnectorHandler.execute: Error [error=${error.message}, moduleRunId=${run.ModuleRunID}, stack=${error.stack}]`,
+      );
       return { error: error, data: null };
     }
   }

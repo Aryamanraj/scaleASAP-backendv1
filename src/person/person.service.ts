@@ -27,7 +27,9 @@ export class PersonService {
 
   async createPerson(dto: CreatePersonDto): Promise<ResultWithError> {
     try {
-      this.logger.info('PersonService.createPerson called', { dto });
+      this.logger.info(
+        `PersonService.createPerson called [dto=${JSON.stringify(dto)}]`,
+      );
 
       // Validate createdByUser exists
       await Promisify(
@@ -47,22 +49,25 @@ export class PersonService {
         this.personRepoService.create(personData),
       );
 
-      this.logger.info('PersonService.createPerson success', {
-        personId: person.PersonID,
-      });
+      this.logger.info(
+        `PersonService.createPerson success [personId=${person.PersonID}]`,
+      );
       return { error: null, data: person };
     } catch (error) {
-      this.logger.error('PersonService.createPerson error', {
-        error: error.message,
-        dto,
-      });
+      this.logger.error(
+        `PersonService.createPerson error [error=${
+          error.message
+        }, dto=${JSON.stringify(dto)}]`,
+      );
       return { error: error, data: null };
     }
   }
 
   async listPersons(filters: ListPersonsQueryDto): Promise<ResultWithError> {
     try {
-      this.logger.info('PersonService.listPersons called', { filters });
+      this.logger.info(
+        `PersonService.listPersons called [filters=${JSON.stringify(filters)}]`,
+      );
 
       const whereConditions: any = {};
 
@@ -78,33 +83,36 @@ export class PersonService {
         this.personRepoService.getAll({ where: whereConditions }),
       );
 
-      this.logger.info('PersonService.listPersons success', {
-        count: persons.length,
-      });
+      this.logger.info(
+        `PersonService.listPersons success [count=${persons.length}]`,
+      );
       return { error: null, data: persons };
     } catch (error) {
-      this.logger.error('PersonService.listPersons error', {
-        error: error.message,
-      });
+      this.logger.error(
+        `PersonService.listPersons error [error=${error.message}]`,
+      );
       return { error: error, data: null };
     }
   }
 
   async getPersonById(personId: number): Promise<ResultWithError> {
     try {
-      this.logger.info('PersonService.getPersonById called', { personId });
+      this.logger.info(
+        `PersonService.getPersonById called [personId=${personId}]`,
+      );
 
       const person = await Promisify<Person>(
         this.personRepoService.get({ where: { PersonID: personId } }, true),
       );
 
-      this.logger.info('PersonService.getPersonById success', { personId });
+      this.logger.info(
+        `PersonService.getPersonById success [personId=${personId}]`,
+      );
       return { error: null, data: person };
     } catch (error) {
-      this.logger.error('PersonService.getPersonById error', {
-        error: error.message,
-        personId,
-      });
+      this.logger.error(
+        `PersonService.getPersonById error [error=${error.message}, personId=${personId}]`,
+      );
       return { error: error, data: null };
     }
   }
@@ -114,10 +122,11 @@ export class PersonService {
     dto: UpdatePersonDto,
   ): Promise<ResultWithError> {
     try {
-      this.logger.info('PersonService.updatePerson called', {
-        personId,
-        dto,
-      });
+      this.logger.info(
+        `PersonService.updatePerson called [personId=${personId}, dto=${JSON.stringify(
+          dto,
+        )}]`,
+      );
 
       const updateData: any = {};
 
@@ -138,13 +147,14 @@ export class PersonService {
         this.personRepoService.get({ where: { PersonID: personId } }, true),
       );
 
-      this.logger.info('PersonService.updatePerson success', { personId });
+      this.logger.info(
+        `PersonService.updatePerson success [personId=${personId}]`,
+      );
       return { error: null, data: person };
     } catch (error) {
-      this.logger.error('PersonService.updatePerson error', {
-        error: error.message,
-        personId,
-      });
+      this.logger.error(
+        `PersonService.updatePerson error [error=${error.message}, personId=${personId}]`,
+      );
       return { error: error, data: null };
     }
   }
@@ -155,11 +165,11 @@ export class PersonService {
     dto: AttachPersonToProjectDto,
   ): Promise<ResultWithError> {
     try {
-      this.logger.info('PersonService.attachPersonToProject called', {
-        projectId,
-        personId,
-        dto,
-      });
+      this.logger.info(
+        `PersonService.attachPersonToProject called [projectId=${projectId}, personId=${personId}, dto=${JSON.stringify(
+          dto,
+        )}]`,
+      );
 
       // Validate project exists
       await Promisify(
@@ -194,8 +204,7 @@ export class PersonService {
 
       if (existingAttachment) {
         this.logger.info(
-          'PersonService.attachPersonToProject - attachment already exists',
-          { projectId, personId },
+          `PersonService.attachPersonToProject - attachment already exists [projectId=${projectId}, personId=${personId}]`,
         );
         return { error: null, data: existingAttachment };
       }
@@ -212,16 +221,14 @@ export class PersonService {
         this.personProjectRepoService.create(attachmentData),
       );
 
-      this.logger.info('PersonService.attachPersonToProject success', {
-        personProjectId: personProject.PersonProjectID,
-      });
+      this.logger.info(
+        `PersonService.attachPersonToProject success [personProjectId=${personProject.PersonProjectID}]`,
+      );
       return { error: null, data: personProject };
     } catch (error) {
-      this.logger.error('PersonService.attachPersonToProject error', {
-        error: error.message,
-        projectId,
-        personId,
-      });
+      this.logger.error(
+        `PersonService.attachPersonToProject error [error=${error.message}, projectId=${projectId}, personId=${personId}]`,
+      );
       return { error: error, data: null };
     }
   }
@@ -231,10 +238,9 @@ export class PersonService {
     personId: number,
   ): Promise<ResultWithError> {
     try {
-      this.logger.info('PersonService.detachPersonFromProject called', {
-        projectId,
-        personId,
-      });
+      this.logger.info(
+        `PersonService.detachPersonFromProject called [projectId=${projectId}, personId=${personId}]`,
+      );
 
       await Promisify(
         this.personProjectRepoService.delete({
@@ -243,26 +249,23 @@ export class PersonService {
         }),
       );
 
-      this.logger.info('PersonService.detachPersonFromProject success', {
-        projectId,
-        personId,
-      });
+      this.logger.info(
+        `PersonService.detachPersonFromProject success [projectId=${projectId}, personId=${personId}]`,
+      );
       return { error: null, data: { removed: true } };
     } catch (error) {
-      this.logger.error('PersonService.detachPersonFromProject error', {
-        error: error.message,
-        projectId,
-        personId,
-      });
+      this.logger.error(
+        `PersonService.detachPersonFromProject error [error=${error.message}, projectId=${projectId}, personId=${personId}]`,
+      );
       return { error: error, data: null };
     }
   }
 
   async getProjectPersons(projectId: number): Promise<ResultWithError> {
     try {
-      this.logger.info('PersonService.getProjectPersons called', {
-        projectId,
-      });
+      this.logger.info(
+        `PersonService.getProjectPersons called [projectId=${projectId}]`,
+      );
 
       const personProjects = await Promisify<PersonProject[]>(
         this.personProjectRepoService.getAll({
@@ -270,16 +273,14 @@ export class PersonService {
         }),
       );
 
-      this.logger.info('PersonService.getProjectPersons success', {
-        projectId,
-        count: personProjects.length,
-      });
+      this.logger.info(
+        `PersonService.getProjectPersons success [projectId=${projectId}, count=${personProjects.length}]`,
+      );
       return { error: null, data: personProjects };
     } catch (error) {
-      this.logger.error('PersonService.getProjectPersons error', {
-        error: error.message,
-        projectId,
-      });
+      this.logger.error(
+        `PersonService.getProjectPersons error [error=${error.message}, projectId=${projectId}]`,
+      );
       return { error: error, data: null };
     }
   }
