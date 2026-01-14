@@ -3,6 +3,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { DocumentsService } from '../../../documents/documents.service';
 import { ClaimRepoService } from '../../../repo/claim-repo.service';
+import { AIService } from '../../../ai/ai.service';
 import { Promisify } from '../../../common/helpers/promisifier';
 import { Document } from '../../../repo/entities/document.entity';
 import { Claim } from '../../../repo/entities/claim.entity';
@@ -11,6 +12,8 @@ import { ResultWithError, ClaimData } from '../../../common/interfaces';
 import { DocumentSource } from '../../../common/types/claim-types';
 import { DocumentKind } from '../../../common/types/document.types';
 import { CLAIM_KEY } from '../../../common/types/claim-types';
+import { AI_PROVIDER, AI_MODEL, AI_TASK } from '../../../common/types/ai.types';
+import { CONFIDENCE_LEVEL } from '../../../common/types/confidence.types';
 import {
   COUNTRY_CODE_TO_TIMEZONE,
   BOARD_POSITION_KEYWORDS,
@@ -22,6 +25,7 @@ import {
   LinkedinExperienceItem,
   LinkedinCertificationItem,
 } from '../../../common/interfaces/linkedin.interfaces';
+import { buildAgeRangePrompt } from '../../../ai/prompts/age-range.prompt';
 
 @Injectable()
 export class LinkedinCoreIdentityEnricherService {
@@ -29,6 +33,7 @@ export class LinkedinCoreIdentityEnricherService {
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
     private documentsService: DocumentsService,
     private claimRepoService: ClaimRepoService,
+    private aiService: AIService,
   ) {}
 
   async enrich(run: ModuleRun): Promise<ResultWithError> {
@@ -244,6 +249,15 @@ export class LinkedinCoreIdentityEnricherService {
           }
         }
       }
+      // 7. Age Range (AI inference from deterministic claims)
+      await this.inferAgeRange(
+        run.ProjectID,
+        run.PersonID,
+        document.CapturedAt,
+        document.DocumentID,
+        run.ModuleRunID,
+        claimsCreated,
+      );
 
       this.logger.info(
         `LinkedinCoreIdentityEnricherService.enrich: Completed enrichment [moduleRunId=${run.ModuleRunID}, claimsCreated=${claimsCreated.length}]`,
@@ -663,5 +677,202 @@ export class LinkedinCoreIdentityEnricherService {
 
   private deepEqual(a: any, b: any): boolean {
     return JSON.stringify(a) === JSON.stringify(b);
+  }
+
+  /**
+   * Infer age range using AI based on education and career claims
+   */
+  private async inferAgeRange(
+    projectId: number,
+    personId: number,
+    observedAt: Date,
+    sourceDocumentId: number,
+    moduleRunId: number,
+    claimsCreated: number[],
+  ): Promise<void> {
+    try {
+      // Fetch education claims
+      const educationClaims = await Promisify<Claim[]>(
+        this.claimRepoService.getAll(
+          {
+            where: {
+              ProjectID: projectId,
+              PersonID: personId,
+              ClaimType: CLAIM_KEY.CORE_EDUCATION_ITEM,
+              SupersededAt: null,
+            },
+          },
+          false, // panic=false
+        ),
+      );
+
+      // Fetch career claims
+      const careerClaims = await Promisify<Claim[]>(
+        this.claimRepoService.getAll(
+          {
+            where: {
+              ProjectID: projectId,
+              PersonID: personId,
+              ClaimType: CLAIM_KEY.CORE_CAREER_ROLE,
+              SupersededAt: null,
+            },
+          },
+          false, // panic=false
+        ),
+      );
+
+      // Skip only if no claims exist at all
+      if (educationClaims.length === 0 && careerClaims.length === 0) {
+        this.logger.info(
+          `LinkedinCoreIdentityEnricherService.inferAgeRange: Skipping age range inference due to zero evidence [projectId=${projectId}, personId=${personId}]`,
+        );
+        return;
+      }
+
+      this.logger.info(
+        `LinkedinCoreIdentityEnricherService.inferAgeRange: Age range inference proceeding [projectId=${projectId}, personId=${personId}, educationCount=${educationClaims.length}, careerCount=${careerClaims.length}]`,
+      );
+
+      // Build rich evidence bundle (include ALL claims, even without dates)
+      const educationEvidence = educationClaims.map((claim) => ({
+        school: claim.ValueJson?.school || 'Unknown',
+        degree: claim.ValueJson?.degree || '',
+        field: claim.ValueJson?.field || '',
+        endYear: claim.ValueJson?.endYear || null,
+      }));
+
+      const careerEvidence = careerClaims.map((claim) => ({
+        title: claim.ValueJson?.title || 'Unknown',
+        company: claim.ValueJson?.company || 'Unknown',
+        startYear: claim.ValueJson?.startDate
+          ? new Date(claim.ValueJson.startDate).getFullYear()
+          : null,
+        isCurrent: claim.ValueJson?.isCurrent || false,
+      }));
+
+      // Build prompts with rich evidence bundle
+      const currentYear = new Date().getFullYear();
+      const { systemPrompt, userPrompt } = buildAgeRangePrompt({
+        education: educationEvidence,
+        career: careerEvidence,
+        profileMeta: {
+          linkedinProfileCapturedYear: observedAt?.getFullYear() || null,
+        },
+        currentYear,
+      });
+
+      // Call AI service
+      const aiResponse = await this.aiService.run({
+        provider: AI_PROVIDER.OPENAI,
+        model: AI_MODEL.GPT_4O,
+        taskType: AI_TASK.AGE_RANGE_ESTIMATION,
+        systemPrompt,
+        userPrompt,
+        temperature: 0.2,
+        maxTokens: 300,
+      });
+
+      // Parse response
+      let parsedResponse: {
+        minAge: number | null;
+        maxAge: number | null;
+        confidence: string;
+        evidence: string[];
+        notes: string;
+      };
+
+      try {
+        parsedResponse = JSON.parse(aiResponse.rawText);
+      } catch (parseError) {
+        this.logger.warn(
+          `LinkedinCoreIdentityEnricherService.inferAgeRange: Failed to parse AI response [error=${parseError.message}, rawText=${aiResponse.rawText}]`,
+        );
+        return;
+      }
+
+      // Validate response
+      if (
+        parsedResponse.minAge !== null &&
+        parsedResponse.maxAge !== null &&
+        parsedResponse.minAge > parsedResponse.maxAge
+      ) {
+        this.logger.warn(
+          `LinkedinCoreIdentityEnricherService.inferAgeRange: Invalid age range [minAge=${parsedResponse.minAge}, maxAge=${parsedResponse.maxAge}]`,
+        );
+        return;
+      }
+
+      if (
+        parsedResponse.minAge !== null &&
+        parsedResponse.maxAge !== null &&
+        parsedResponse.maxAge - parsedResponse.minAge > 12
+      ) {
+        this.logger.warn(
+          `LinkedinCoreIdentityEnricherService.inferAgeRange: Age range too wide [minAge=${
+            parsedResponse.minAge
+          }, maxAge=${parsedResponse.maxAge}, width=${
+            parsedResponse.maxAge - parsedResponse.minAge
+          }]`,
+        );
+        return;
+      }
+
+      if (
+        !Object.values(CONFIDENCE_LEVEL).includes(
+          parsedResponse.confidence as CONFIDENCE_LEVEL,
+        )
+      ) {
+        this.logger.warn(
+          `LinkedinCoreIdentityEnricherService.inferAgeRange: Invalid confidence level [confidence=${parsedResponse.confidence}]`,
+        );
+        return;
+      }
+
+      // Build complete ValueJson with AI metadata embedded
+      const valueJsonWithMeta = {
+        minAge: parsedResponse.minAge,
+        maxAge: parsedResponse.maxAge,
+        confidence: parsedResponse.confidence,
+        evidence: parsedResponse.evidence,
+        notes: parsedResponse.notes,
+        _meta: {
+          moduleRunId,
+          derivedFromClaimIds: [
+            ...educationClaims.map((c) => c.ClaimID),
+            ...careerClaims.map((c) => c.ClaimID),
+          ],
+          aiProvider: aiResponse.provider,
+          aiModel: aiResponse.model,
+          tokensUsed: aiResponse.tokensUsed || 0,
+        },
+      };
+
+      // Write claim with embedded metadata
+      const claim = await this.writeSingleValueClaim(
+        projectId,
+        personId,
+        CLAIM_KEY.CORE_AGE_RANGE,
+        valueJsonWithMeta,
+        0.7, // Lower confidence for AI-inferred claims
+        observedAt,
+        sourceDocumentId,
+        moduleRunId,
+        'v1',
+        'ai_inference',
+      );
+
+      if (claim) {
+        claimsCreated.push(claim.ClaimID);
+        this.logger.info(
+          `LinkedinCoreIdentityEnricherService.inferAgeRange: Age range inferred [claimId=${claim.ClaimID}, minAge=${parsedResponse.minAge}, maxAge=${parsedResponse.maxAge}, confidence=${parsedResponse.confidence}]`,
+        );
+      }
+    } catch (error) {
+      // Log error but don't fail the entire enrichment
+      this.logger.error(
+        `LinkedinCoreIdentityEnricherService.inferAgeRange: Error during age range inference [error=${error.message}, stack=${error.stack}]`,
+      );
+      // Continue without failing the module
+    }
   }
 }

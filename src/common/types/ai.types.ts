@@ -7,7 +7,6 @@ export enum AI_PROVIDER {
 }
 
 export enum AI_MODEL {
-  GPT_4_5 = 'gpt-4.5',
   GPT_4O = 'gpt-4o',
   GPT_4O_MINI = 'gpt-4o-mini',
 }

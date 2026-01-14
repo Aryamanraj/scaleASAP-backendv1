@@ -9,6 +9,7 @@ export const ClaimType = {
   CORE_IDENTITY_CAREER_ROLE: 'core_identity.career_role',
   CORE_IDENTITY_CERTIFICATION: 'core_identity.certification',
   CORE_IDENTITY_BOARD_POSITION: 'core_identity.board_position',
+  CORE_IDENTITY_AGE_RANGE: 'core_identity.age_range',
 } as const;
 
 /**
@@ -21,6 +22,7 @@ export enum CLAIM_KEY {
   CORE_CAREER_ROLE = 'core_identity.career_role',
   CORE_CERTIFICATION = 'core_identity.certification',
   CORE_BOARD_POSITION = 'core_identity.board_position',
+  CORE_AGE_RANGE = 'core_identity.age_range',
 }
 
 /**
