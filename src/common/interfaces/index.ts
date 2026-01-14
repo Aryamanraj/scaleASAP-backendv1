@@ -15,5 +15,8 @@ export interface JwtPayload {
   userId: number;
 }
 
-// Re-export enricher interfaces
+export * from './ai.interfaces';
+export * from './apify.interfaces';
 export * from './enricher.interfaces';
+export * from './linkedin.interfaces';
+export * from './module-inputs.interface';

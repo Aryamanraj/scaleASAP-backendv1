@@ -22,6 +22,7 @@ import { LinkedinDocumentWriterService } from './services/linkedin-document-writ
 import { LinkedinConnectorModule } from '../connectors/linkedin/linkedin.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { LinkedinCoreIdentityModule } from '../enrichers/linkedin-core-identity/linkedin-core-identity.module';
+import { AIModule } from '../ai/ai.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { LinkedinCoreIdentityModule } from '../enrichers/linkedin-core-identity/
     LinkedinConnectorModule,
     DocumentsModule,
     LinkedinCoreIdentityModule,
+    AIModule,
   ],
   providers: [
     LogConsumer,
