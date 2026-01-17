@@ -14,6 +14,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Project } from './project.entity';
 import { Person } from './person.entity';
 import { ContentChunkItem } from './content-chunk-item.entity';
+import {
+  DATA_SOURCE,
+  CHUNK_TYPE,
+  CHUNK_STATUS,
+} from '../../common/types/posts.types';
 
 @Entity({ name: 'ContentChunks' })
 @Index(['ProjectID', 'PersonID', 'ChunkType', 'FromAt', 'ToAt'])
@@ -31,13 +36,13 @@ export class ContentChunk extends BaseEntity {
   @Column({ type: 'bigint', nullable: false })
   PersonID: number;
 
-  @ApiProperty()
-  @Column({ length: 50, nullable: false })
-  Source: string;
+  @ApiProperty({ enum: DATA_SOURCE })
+  @Column({ type: 'enum', enum: DATA_SOURCE, nullable: false })
+  Source: DATA_SOURCE;
 
-  @ApiProperty()
-  @Column({ length: 50, nullable: false })
-  ChunkType: string;
+  @ApiProperty({ enum: CHUNK_TYPE })
+  @Column({ type: 'enum', enum: CHUNK_TYPE, nullable: false })
+  ChunkType: CHUNK_TYPE;
 
   @ApiProperty()
   @Column({ type: 'timestamp with time zone', nullable: true })
@@ -55,9 +60,9 @@ export class ContentChunk extends BaseEntity {
   @Column({ length: 255, nullable: false })
   Fingerprint: string;
 
-  @ApiProperty()
-  @Column({ length: 50, nullable: false })
-  Status: string;
+  @ApiProperty({ enum: CHUNK_STATUS })
+  @Column({ type: 'enum', enum: CHUNK_STATUS, nullable: false })
+  Status: CHUNK_STATUS;
 
   @ApiProperty()
   @Column({ type: 'boolean', default: true, nullable: false })

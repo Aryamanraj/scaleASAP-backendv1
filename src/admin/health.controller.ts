@@ -11,6 +11,7 @@ import {
 import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
 import { Response } from 'express';
 import { makeResponse } from '../common/helpers/reponseMaker';
+import { Promisify } from '../common/helpers/promisifier';
 import { ScheduleService } from '../schedule/schedule.service';
 import { StartCronDto } from './dto/start-cron.dto';
 import { CronExpression } from '@nestjs/schedule';
@@ -39,12 +40,13 @@ export class CronsHealthController {
     let resData = null;
     let resSuccess = true;
     try {
-      const result = await this.schedulerService.startCronsHealthChecker(
-        data.timePeriod as CronExpression,
+      const result = await Promisify<boolean>(
+        this.schedulerService.startCronsHealthChecker(
+          data.timePeriod as CronExpression,
+        ),
       );
-      if (result.error) throw result.error;
 
-      resData = result.data;
+      resData = result;
     } catch (error) {
       resStatus = resStatus = error?.status
         ? error.status
@@ -66,10 +68,11 @@ export class CronsHealthController {
     let resData = null;
     let resSuccess = true;
     try {
-      const result = await this.schedulerService.stopCronsHealthChecker();
-      if (result.error) throw result.error;
+      const result = await Promisify<boolean>(
+        this.schedulerService.stopCronsHealthChecker(),
+      );
 
-      resData = result.data;
+      resData = result;
     } catch (error) {
       resStatus = resStatus = error?.status
         ? error.status

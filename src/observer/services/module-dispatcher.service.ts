@@ -10,6 +10,9 @@ import { LinkedinProfileConnectorHandler } from '../../connectors/linkedin/handl
 import { LinkedinPostsConnectorHandler } from '../../connectors/linkedin/handlers/linkedin-posts-connector.handler';
 import { LinkedinCoreIdentityEnricherHandler } from '../../enrichers/linkedin-core-identity/handlers/linkedin-core-identity-enricher.handler';
 import { LinkedinDigitalIdentityEnricherHandler } from '../../enrichers/linkedin-digital-identity/handlers/linkedin-digital-identity-enricher.handler';
+import { ContentChunkerHandler } from '../../enrichers/content-chunker/handlers/content-chunker.handler';
+import { LinkedinPostsChunkEvidenceExtractorHandler } from '../../enrichers/linkedin-posts-chunk-evidence-extractor/handlers/linkedin-posts-chunk-evidence-extractor.handler';
+import { PersonalityActiveTimesReducerHandler } from '../../enrichers/personality-active-times-reducer/handlers/personality-active-times-reducer.handler';
 import {
   LINKEDIN_PROFILE_CONNECTOR_KEY,
   LINKEDIN_POSTS_CONNECTOR_KEY,
@@ -29,6 +32,9 @@ export class ModuleDispatcherService {
     private linkedinPostsConnectorHandler: LinkedinPostsConnectorHandler,
     private linkedinCoreIdentityEnricherHandler: LinkedinCoreIdentityEnricherHandler,
     private linkedinDigitalIdentityEnricherHandler: LinkedinDigitalIdentityEnricherHandler,
+    private contentChunkerHandler: ContentChunkerHandler,
+    private linkedinPostsChunkEvidenceExtractorHandler: LinkedinPostsChunkEvidenceExtractorHandler,
+    private personalityActiveTimesReducerHandler: PersonalityActiveTimesReducerHandler,
   ) {}
 
   async execute(run: ModuleRun): Promise<ResultWithError> {
@@ -52,9 +58,17 @@ export class ModuleDispatcherService {
         case LINKEDIN_POSTS_CONNECTOR_KEY:
           return await this.linkedinPostsConnectorHandler.execute(run);
         case MODULE_KEYS.LINKEDIN_CORE_IDENTITY_ENRICHER:
+          return await this.linkedinCoreIdentityEnricherHandler.execute(run);
         case MODULE_KEYS.LINKEDIN_DIGITAL_IDENTITY_ENRICHER:
           return await this.linkedinDigitalIdentityEnricherHandler.execute(run);
-          return await this.linkedinCoreIdentityEnricherHandler.execute(run);
+        case MODULE_KEYS.CONTENT_CHUNKER:
+          return await this.contentChunkerHandler.execute(run);
+        case MODULE_KEYS.LINKEDIN_POSTS_CHUNK_EVIDENCE_EXTRACTOR:
+          return await this.linkedinPostsChunkEvidenceExtractorHandler.execute(
+            run,
+          );
+        case MODULE_KEYS.PERSONALITY_ACTIVE_TIMES_REDUCER:
+          return await this.personalityActiveTimesReducerHandler.execute(run);
         default:
           throw new Error(
             `No handler registered for module key: ${run.ModuleKey}`,

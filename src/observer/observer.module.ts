@@ -23,6 +23,9 @@ import { LinkedinConnectorModule } from '../connectors/linkedin/linkedin.module'
 import { DocumentsModule } from '../documents/documents.module';
 import { LinkedinCoreIdentityModule } from '../enrichers/linkedin-core-identity/linkedin-core-identity.module';
 import { LinkedinDigitalIdentityModule } from '../enrichers/linkedin-digital-identity/linkedin-digital-identity.module';
+import { ContentChunkerModule } from '../enrichers/content-chunker/content-chunker.module';
+import { LinkedinPostsChunkEvidenceExtractorModule } from '../enrichers/linkedin-posts-chunk-evidence-extractor/linkedin-posts-chunk-evidence-extractor.module';
+import { PersonalityActiveTimesReducerModule } from '../enrichers/personality-active-times-reducer/personality-active-times-reducer.module';
 import { AIModule } from '../ai/ai.module';
 
 @Module({
@@ -39,6 +42,9 @@ import { AIModule } from '../ai/ai.module';
     DocumentsModule,
     LinkedinCoreIdentityModule,
     LinkedinDigitalIdentityModule,
+    ContentChunkerModule,
+    LinkedinPostsChunkEvidenceExtractorModule,
+    PersonalityActiveTimesReducerModule,
     AIModule,
   ],
   providers: [

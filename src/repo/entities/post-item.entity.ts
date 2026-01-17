@@ -13,6 +13,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Project } from './project.entity';
 import { Person } from './person.entity';
 import { Document } from './document.entity';
+import { DATA_SOURCE } from '../../common/types/posts.types';
 
 @Entity({ name: 'PostItems' })
 @Index(['ProjectID', 'PersonID', 'PostedAt'])
@@ -34,9 +35,9 @@ export class PostItem extends BaseEntity {
   @Column({ type: 'bigint', nullable: true })
   SourceDocumentID: number;
 
-  @ApiProperty()
-  @Column({ length: 50, nullable: false })
-  Source: string;
+  @ApiProperty({ enum: DATA_SOURCE })
+  @Column({ type: 'enum', enum: DATA_SOURCE, nullable: false })
+  Source: DATA_SOURCE;
 
   @ApiProperty()
   @Column({ length: 255, nullable: true })

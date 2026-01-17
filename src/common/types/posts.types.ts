@@ -4,9 +4,11 @@
 
 export enum DATA_SOURCE {
   LINKEDIN = 'LINKEDIN',
+  X = 'X',
   TWITTER = 'TWITTER',
   GITHUB = 'GITHUB',
   BLOG = 'BLOG',
+  OTHER = 'OTHER',
 }
 
 export enum CHUNK_TYPE {

@@ -28,6 +28,8 @@ export enum CLAIM_KEY {
   DIGITAL_PROFILE_PHOTO_SIGNAL = 'digital_identity.profile_photo_signal',
   DIGITAL_BIO_EVOLUTION = 'digital_identity.bio_evolution',
   DIGITAL_DOMAIN_OWNERSHIP = 'digital_identity.domain_ownership',
+
+  PERSONALITY_ACTIVE_TIMES = 'personality.active_times',
 }
 
 /**
