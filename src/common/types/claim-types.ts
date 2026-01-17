@@ -23,6 +23,11 @@ export enum CLAIM_KEY {
   CORE_CERTIFICATION = 'core_identity.certification',
   CORE_BOARD_POSITION = 'core_identity.board_position',
   CORE_AGE_RANGE = 'core_identity.age_range',
+
+  DIGITAL_EMAIL_PATTERN = 'digital_identity.email_pattern',
+  DIGITAL_PROFILE_PHOTO_SIGNAL = 'digital_identity.profile_photo_signal',
+  DIGITAL_BIO_EVOLUTION = 'digital_identity.bio_evolution',
+  DIGITAL_DOMAIN_OWNERSHIP = 'digital_identity.domain_ownership',
 }
 
 /**

@@ -12,6 +12,7 @@ export const MODULE_KEYS = {
   // Enrichers
   CORE_IDENTITY_ENRICHER: 'core-identity-enricher',
   LINKEDIN_CORE_IDENTITY_ENRICHER: 'linkedin-core-identity-enricher',
+  LINKEDIN_DIGITAL_IDENTITY_ENRICHER: 'linkedin-digital-identity-enricher',
 
   // Composers
   LAYER_1_COMPOSER: 'layer-1-composer',

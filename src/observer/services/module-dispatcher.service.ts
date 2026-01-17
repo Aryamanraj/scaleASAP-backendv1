@@ -9,6 +9,7 @@ import { Layer1ComposerHandler } from './handlers/layer-1-composer.handler';
 import { LinkedinProfileConnectorHandler } from '../../connectors/linkedin/handlers/linkedin-profile-connector.handler';
 import { LinkedinPostsConnectorHandler } from '../../connectors/linkedin/handlers/linkedin-posts-connector.handler';
 import { LinkedinCoreIdentityEnricherHandler } from '../../enrichers/linkedin-core-identity/handlers/linkedin-core-identity-enricher.handler';
+import { LinkedinDigitalIdentityEnricherHandler } from '../../enrichers/linkedin-digital-identity/handlers/linkedin-digital-identity-enricher.handler';
 import {
   LINKEDIN_PROFILE_CONNECTOR_KEY,
   LINKEDIN_POSTS_CONNECTOR_KEY,
@@ -27,6 +28,7 @@ export class ModuleDispatcherService {
     private linkedinProfileConnectorHandler: LinkedinProfileConnectorHandler,
     private linkedinPostsConnectorHandler: LinkedinPostsConnectorHandler,
     private linkedinCoreIdentityEnricherHandler: LinkedinCoreIdentityEnricherHandler,
+    private linkedinDigitalIdentityEnricherHandler: LinkedinDigitalIdentityEnricherHandler,
   ) {}
 
   async execute(run: ModuleRun): Promise<ResultWithError> {
@@ -50,6 +52,8 @@ export class ModuleDispatcherService {
         case LINKEDIN_POSTS_CONNECTOR_KEY:
           return await this.linkedinPostsConnectorHandler.execute(run);
         case MODULE_KEYS.LINKEDIN_CORE_IDENTITY_ENRICHER:
+        case MODULE_KEYS.LINKEDIN_DIGITAL_IDENTITY_ENRICHER:
+          return await this.linkedinDigitalIdentityEnricherHandler.execute(run);
           return await this.linkedinCoreIdentityEnricherHandler.execute(run);
         default:
           throw new Error(

@@ -22,6 +22,7 @@ import { LinkedinDocumentWriterService } from './services/linkedin-document-writ
 import { LinkedinConnectorModule } from '../connectors/linkedin/linkedin.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { LinkedinCoreIdentityModule } from '../enrichers/linkedin-core-identity/linkedin-core-identity.module';
+import { LinkedinDigitalIdentityModule } from '../enrichers/linkedin-digital-identity/linkedin-digital-identity.module';
 import { AIModule } from '../ai/ai.module';
 
 @Module({
@@ -37,6 +38,7 @@ import { AIModule } from '../ai/ai.module';
     LinkedinConnectorModule,
     DocumentsModule,
     LinkedinCoreIdentityModule,
+    LinkedinDigitalIdentityModule,
     AIModule,
   ],
   providers: [
