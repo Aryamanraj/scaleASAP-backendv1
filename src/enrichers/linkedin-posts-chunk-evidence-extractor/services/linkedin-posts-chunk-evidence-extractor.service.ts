@@ -18,6 +18,7 @@ import { AI_TASK, AI_MODEL, AI_PROVIDER } from '../../../common/types/ai.types';
 import { buildPostsChunkEvidencePrompt } from '../../../ai/prompts/posts-chunk-evidence.prompt';
 import { Promisify } from '../../../common/helpers/promisifier';
 import { IsNull, Not } from 'typeorm';
+import { formatUtcYearMonth } from '../../../common/helpers/time';
 
 interface ExtractConfig {
   projectId: number;
@@ -338,9 +339,7 @@ export class LinkedinPostsChunkEvidenceExtractorService {
   private getChunkPeriodLabel(chunk: any): string {
     if (chunk.FromAt && chunk.ToAt) {
       const fromDate = new Date(chunk.FromAt);
-      const year = fromDate.getFullYear();
-      const month = String(fromDate.getMonth() + 1).padStart(2, '0');
-      return `${year}-${month}`;
+      return formatUtcYearMonth(fromDate);
     }
     return chunk.Fingerprint.includes('undated') ? 'undated' : 'batch';
   }

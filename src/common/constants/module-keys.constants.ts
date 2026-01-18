@@ -13,6 +13,7 @@ export const MODULE_KEYS = {
   CORE_IDENTITY_ENRICHER: 'core-identity-enricher',
   LINKEDIN_CORE_IDENTITY_ENRICHER: 'linkedin-core-identity-enricher',
   LINKEDIN_DIGITAL_IDENTITY_ENRICHER: 'linkedin-digital-identity-enricher',
+  LINKEDIN_POSTS_NORMALIZER: 'linkedin-posts-normalizer',
   CONTENT_CHUNKER: 'content-chunker',
   LINKEDIN_POSTS_CHUNK_EVIDENCE_EXTRACTOR:
     'linkedin-posts-chunk-evidence-extractor',

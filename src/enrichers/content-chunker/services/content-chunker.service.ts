@@ -15,6 +15,12 @@ import {
 } from '../../../common/types/posts.types';
 import { Promisify } from '../../../common/helpers/promisifier';
 import { createHash } from 'crypto';
+import {
+  getUtcYear,
+  getUtcMonth,
+  getUtcMonthStart,
+  getUtcMonthEnd,
+} from '../../../common/helpers/time';
 
 interface ChunkConfig {
   projectId: number;
@@ -143,14 +149,14 @@ export class ContentChunkerService {
         const postedDate = new Date(post.PostedAt);
 
         if (chunkType === CHUNK_TYPE.MONTHLY) {
-          // Group by month (YYYY-MM)
-          const year = postedDate.getFullYear();
-          const month = postedDate.getMonth(); // 0-11
+          // Group by month (YYYY-MM) in UTC
+          const year = getUtcYear(postedDate);
+          const month = getUtcMonth(postedDate); // 0-11
           key = `${year}-${String(month + 1).padStart(2, '0')}`;
 
-          // Set chunk boundaries
-          fromAt = new Date(year, month, 1);
-          toAt = new Date(year, month + 1, 0, 23, 59, 59, 999);
+          // Set chunk boundaries in UTC
+          fromAt = getUtcMonthStart(year, month);
+          toAt = getUtcMonthEnd(year, month);
         } else {
           // BATCH: all dated posts in one chunk
           key = 'dated-batch';

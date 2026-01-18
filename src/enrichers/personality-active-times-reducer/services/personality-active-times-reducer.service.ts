@@ -7,13 +7,19 @@ import { ContentChunkItem } from '../../../repo/entities/content-chunk-item.enti
 import { PostItem } from '../../../repo/entities/post-item.entity';
 import { ChunkEvidence } from '../../../repo/entities/chunk-evidence.entity';
 import { Claim } from '../../../repo/entities/claim.entity';
+import { Document } from '../../../repo/entities/document.entity';
 import { ContentChunkRepoService } from '../../../repo/content-chunk-repo.service';
 import { ContentChunkItemRepoService } from '../../../repo/content-chunk-item-repo.service';
 import { PostItemRepoService } from '../../../repo/post-item-repo.service';
 import { ChunkEvidenceRepoService } from '../../../repo/chunk-evidence-repo.service';
 import { ClaimRepoService } from '../../../repo/claim-repo.service';
+import { DocumentsService } from '../../../documents/documents.service';
 import { EVIDENCE_STATUS } from '../../../common/types/posts.types';
 import { CLAIM_KEY } from '../../../common/types/claim-types';
+import {
+  DocumentSource,
+  DocumentKind,
+} from '../../../common/types/document.types';
 import { Promisify } from '../../../common/helpers/promisifier';
 
 interface ReducerConfig {
@@ -34,6 +40,7 @@ export class PersonalityActiveTimesReducerService {
     private postItemRepoService: PostItemRepoService,
     private chunkEvidenceRepoService: ChunkEvidenceRepoService,
     private claimRepoService: ClaimRepoService,
+    private documentsService: DocumentsService,
   ) {}
 
   async reduce(run: ModuleRun): Promise<any> {
@@ -183,12 +190,20 @@ export class PersonalityActiveTimesReducerService {
         confidence = 'HIGH';
       }
 
-      // Build ValueJson
+      this.logger.info(
+        `PersonalityActiveTimesReducerService.reduce: Using UTC time basis for bucketing [postsWithTime=${postsWithTime}]`,
+      );
+
+      // Build ValueJson with UTC metadata
       const valueJson = {
         hourHistogram,
         peakHours,
         confidence,
         _meta: {
+          time: {
+            basis: 'UTC',
+            timezone: 'UTC',
+          },
           chunksUsed: relevantEvidences.length,
           evidenceIds: relevantEvidences.map((e) => e.ChunkEvidenceID),
           postsAnalyzed: postsWithTime,
@@ -196,6 +211,20 @@ export class PersonalityActiveTimesReducerService {
           moduleRunId: run.ModuleRunID,
         },
       };
+
+      // Fetch primary source document for SourceDocumentID
+      const primaryDoc = await Promisify<Document>(
+        this.documentsService.getLatestValidDocument({
+          projectId: config.projectId,
+          personId: config.personId,
+          source: DocumentSource.LINKEDIN,
+          documentKind: DocumentKind.LINKEDIN_POSTS,
+        }),
+      );
+
+      this.logger.info(
+        `PersonalityActiveTimesReducerService.reduce: Using primary source document [documentId=${primaryDoc.DocumentID}]`,
+      );
 
       // Check if claim already exists
       const existingClaims = await Promisify<Claim[]>(
@@ -231,7 +260,7 @@ export class PersonalityActiveTimesReducerService {
             ObservedAt: new Date(),
             ValidFrom: null,
             ValidTo: null,
-            SourceDocumentID: null,
+            SourceDocumentID: primaryDoc.DocumentID,
             ModuleRunID: run.ModuleRunID,
             SchemaVersion: 'v1',
           }),
@@ -265,7 +294,7 @@ export class PersonalityActiveTimesReducerService {
             ObservedAt: new Date(),
             ValidFrom: null,
             ValidTo: null,
-            SourceDocumentID: null,
+            SourceDocumentID: primaryDoc.DocumentID,
             ModuleRunID: run.ModuleRunID,
             SchemaVersion: 'v1',
           }),

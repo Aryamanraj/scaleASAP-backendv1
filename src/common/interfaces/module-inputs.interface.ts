@@ -48,3 +48,22 @@ export interface CoreIdentityPayload {
     year?: number;
   }>;
 }
+
+/**
+ * LinkedIn Posts Normalizer Input Configuration
+ */
+export interface NormalizeLinkedinPostsInputConfig {
+  documentId?: number; // If provided, normalize this specific document
+  maxPosts?: number; // Maximum posts to process, default 500
+  forceRebuild?: boolean; // If true, mark previous PostItems from same SourceDocumentID as IsValid=false
+}
+
+/**
+ * LinkedIn Posts Normalizer Result
+ */
+export interface NormalizeLinkedinPostsResult {
+  created: number; // Number of new PostItems created
+  skipped: number; // Number of posts skipped (duplicates or errors)
+  totalParsed: number; // Total posts parsed from document
+  documentId: number; // Document ID that was processed
+}

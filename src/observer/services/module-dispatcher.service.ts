@@ -10,6 +10,7 @@ import { LinkedinProfileConnectorHandler } from '../../connectors/linkedin/handl
 import { LinkedinPostsConnectorHandler } from '../../connectors/linkedin/handlers/linkedin-posts-connector.handler';
 import { LinkedinCoreIdentityEnricherHandler } from '../../enrichers/linkedin-core-identity/handlers/linkedin-core-identity-enricher.handler';
 import { LinkedinDigitalIdentityEnricherHandler } from '../../enrichers/linkedin-digital-identity/handlers/linkedin-digital-identity-enricher.handler';
+import { LinkedinPostsNormalizerHandler } from '../../enrichers/linkedin-posts-normalizer/handlers/linkedin-posts-normalizer.handler';
 import { ContentChunkerHandler } from '../../enrichers/content-chunker/handlers/content-chunker.handler';
 import { LinkedinPostsChunkEvidenceExtractorHandler } from '../../enrichers/linkedin-posts-chunk-evidence-extractor/handlers/linkedin-posts-chunk-evidence-extractor.handler';
 import { PersonalityActiveTimesReducerHandler } from '../../enrichers/personality-active-times-reducer/handlers/personality-active-times-reducer.handler';
@@ -32,6 +33,7 @@ export class ModuleDispatcherService {
     private linkedinPostsConnectorHandler: LinkedinPostsConnectorHandler,
     private linkedinCoreIdentityEnricherHandler: LinkedinCoreIdentityEnricherHandler,
     private linkedinDigitalIdentityEnricherHandler: LinkedinDigitalIdentityEnricherHandler,
+    private linkedinPostsNormalizerHandler: LinkedinPostsNormalizerHandler,
     private contentChunkerHandler: ContentChunkerHandler,
     private linkedinPostsChunkEvidenceExtractorHandler: LinkedinPostsChunkEvidenceExtractorHandler,
     private personalityActiveTimesReducerHandler: PersonalityActiveTimesReducerHandler,
@@ -61,6 +63,8 @@ export class ModuleDispatcherService {
           return await this.linkedinCoreIdentityEnricherHandler.execute(run);
         case MODULE_KEYS.LINKEDIN_DIGITAL_IDENTITY_ENRICHER:
           return await this.linkedinDigitalIdentityEnricherHandler.execute(run);
+        case MODULE_KEYS.LINKEDIN_POSTS_NORMALIZER:
+          return await this.linkedinPostsNormalizerHandler.execute(run);
         case MODULE_KEYS.CONTENT_CHUNKER:
           return await this.contentChunkerHandler.execute(run);
         case MODULE_KEYS.LINKEDIN_POSTS_CHUNK_EVIDENCE_EXTRACTOR:
