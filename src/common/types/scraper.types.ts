@@ -1,0 +1,17 @@
+/**
+ * Scraper Types
+ */
+
+export enum SCRAPER_PROVIDER {
+  PROSPECT = 'PROSPECT',
+  LINKEDIN = 'LINKEDIN',
+  APIFY = 'APIFY',
+}
+
+export enum SCRAPER_TASK_TYPE {
+  SEARCH = 'SEARCH',
+  PROFILE = 'PROFILE',
+  POSTS = 'POSTS',
+  COMMENTS = 'COMMENTS',
+  ENRICHMENT = 'ENRICHMENT',
+}
