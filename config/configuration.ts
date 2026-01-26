@@ -6,6 +6,7 @@ export default () => {
     POSTGRES_USER: process.env.POSTGRES_USER,
     POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD,
     POSTGRES_DB: process.env.POSTGRES_DB,
+    DB_SYNC: process.env.DB_SYNC, // Set to 'true' to enable TypeORM synchronize (development only!)
     PORT: parseInt(process.env.PORT) || 3001,
     REDIS_HOST: process.env.REDIS_HOST,
     REDIS_PORT: process.env.REDIS_PORT,
