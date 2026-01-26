@@ -7,6 +7,7 @@ import { LoggerMiddleware } from '../common/middlewares/logger.middleware';
 import { QueueNames } from '../common/constants';
 import { BullModule } from '@nestjs/bull';
 import { CronsHealthController } from './health.controller';
+import { MigrationService } from '../db/migration.service';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { CronsHealthController } from './health.controller';
     ScheduleModule,
   ],
   controllers: [AdminController, CronsHealthController],
-  providers: [AdminService],
+  providers: [AdminService, MigrationService],
 })
 export class AdminModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

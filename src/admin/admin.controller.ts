@@ -1,17 +1,46 @@
 import {
   Controller,
+  Get,
+  HttpStatus,
+  Res,
   UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { MigrationService } from '../db/migration.service';
+import { makeResponse } from '../common/helpers/reponseMaker';
+
 @Controller('admin')
 @ApiTags('Admin Apis')
 @ApiBearerAuth('Api-auth')
 @UseGuards(AdminAuthGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class AdminController {
+  constructor(private migrationService: MigrationService) {}
+
+  @Get('/migrations/status')
+  @ApiOperation({ summary: 'Get database migration status' })
+  async getMigrationStatus(@Res() res: Response) {
+    let resStatus = HttpStatus.OK;
+    let resMessage = 'Migration status retrieved successfully';
+    let resData = null;
+    let resSuccess = true;
+
+    try {
+      resData = await this.migrationService.getMigrationStatus();
+    } catch (error) {
+      resStatus = error?.status
+        ? error.status
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+      resMessage = `Failed to get migration status: ${error.message}`;
+      resSuccess = false;
+    }
+
+    makeResponse(res, resStatus, resSuccess, resMessage, resData);
+  }
   // @Post('/indexed-state')
   // @ApiOkResponseGeneric({
   //   type: Boolean,
