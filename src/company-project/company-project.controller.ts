@@ -19,14 +19,14 @@ import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
 import { ApiOkResponseGeneric } from '../common/decorators/apiOkResponse.decorator';
 import { makeResponse } from '../common/helpers/reponseMaker';
 import { Promisify } from '../common/helpers/promisifier';
-import { Company } from '../repo/entities/company.entity';
+import { Client } from '../repo/entities/client.entity';
 import { Project } from '../repo/entities/project.entity';
 import { ProjectUser } from '../repo/entities/project-user.entity';
 import { CompanyProjectService } from './company-project.service';
 import { AddUserToProjectDto } from './dto/add-user-to-project.dto';
-import { CreateCompanyDto } from './dto/create-company.dto';
+import { CreateClientDto } from './dto/create-client.dto';
 import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateCompanyDto } from './dto/update-company.dto';
+import { UpdateClientDto } from './dto/update-client.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 
 @Controller('company-project')
@@ -37,33 +37,33 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 export class CompanyProjectController {
   constructor(private companyProjectService: CompanyProjectService) {}
 
-  // ========== Companies ==========
+  // ========== Clients ==========
 
-  @Post('companies')
-  @ApiOperation({ summary: 'Create a new company' })
+  @Post('clients')
+  @ApiOperation({ summary: 'Create a new client' })
   @ApiOkResponseGeneric({
-    type: Company,
-    description: 'Company created successfully',
+    type: Client,
+    description: 'Client created successfully',
   })
-  async createCompany(
-    @Body() createCompanyDto: CreateCompanyDto,
+  async createClient(
+    @Body() createClientDto: CreateClientDto,
     @Res() res: Response,
   ) {
     let resStatus = HttpStatus.CREATED;
-    let resMessage = 'Company created successfully';
+    let resMessage = 'Client created successfully';
     let resData = null;
     let resSuccess = true;
 
     try {
-      const company = await Promisify<Company>(
-        this.companyProjectService.createCompany(createCompanyDto),
+      const client = await Promisify<Client>(
+        this.companyProjectService.createClient(createClientDto),
       );
-      resData = company;
+      resData = client;
     } catch (error) {
       resStatus = error?.status
         ? error.status
         : HttpStatus.INTERNAL_SERVER_ERROR;
-      resMessage = `Failed to create company : ${
+      resMessage = `Failed to create client : ${
         error?.message ?? 'Unknown error'
       }`;
       resSuccess = false;
@@ -72,29 +72,29 @@ export class CompanyProjectController {
     makeResponse(res, resStatus, resSuccess, resMessage, resData);
   }
 
-  @Get('companies')
-  @ApiOperation({ summary: 'Get all companies' })
+  @Get('clients')
+  @ApiOperation({ summary: 'Get all clients' })
   @ApiOkResponseGeneric({
-    type: Company,
+    type: Client,
     isArray: true,
-    description: 'Companies fetched successfully',
+    description: 'Clients fetched successfully',
   })
-  async getAllCompanies(@Res() res: Response) {
+  async getAllClients(@Res() res: Response) {
     let resStatus = HttpStatus.OK;
-    let resMessage = 'Companies fetched successfully';
+    let resMessage = 'Clients fetched successfully';
     let resData = null;
     let resSuccess = true;
 
     try {
-      const companies = await Promisify<Company[]>(
-        this.companyProjectService.getAllCompanies(),
+      const clients = await Promisify<Client[]>(
+        this.companyProjectService.getAllClients(),
       );
-      resData = companies;
+      resData = clients;
     } catch (error) {
       resStatus = error?.status
         ? error.status
         : HttpStatus.INTERNAL_SERVER_ERROR;
-      resMessage = `Failed to fetch companies : ${
+      resMessage = `Failed to fetch clients : ${
         error?.message ?? 'Unknown error'
       }`;
       resSuccess = false;
@@ -103,31 +103,31 @@ export class CompanyProjectController {
     makeResponse(res, resStatus, resSuccess, resMessage, resData);
   }
 
-  @Get('companies/:companyId')
-  @ApiOperation({ summary: 'Get company by ID' })
+  @Get('clients/:clientId')
+  @ApiOperation({ summary: 'Get client by ID' })
   @ApiOkResponseGeneric({
-    type: Company,
-    description: 'Company fetched successfully',
+    type: Client,
+    description: 'Client fetched successfully',
   })
-  async getCompanyById(
-    @Param('companyId', ParseIntPipe) companyId: number,
+  async getClientById(
+    @Param('clientId', ParseIntPipe) clientId: number,
     @Res() res: Response,
   ) {
     let resStatus = HttpStatus.OK;
-    let resMessage = 'Company fetched successfully';
+    let resMessage = 'Client fetched successfully';
     let resData = null;
     let resSuccess = true;
 
     try {
-      const company = await Promisify<Company>(
-        this.companyProjectService.getCompanyById(companyId),
+      const client = await Promisify<Client>(
+        this.companyProjectService.getClientById(clientId),
       );
-      resData = company;
+      resData = client;
     } catch (error) {
       resStatus = error?.status
         ? error.status
         : HttpStatus.INTERNAL_SERVER_ERROR;
-      resMessage = `Failed to fetch company : ${
+      resMessage = `Failed to fetch client : ${
         error?.message ?? 'Unknown error'
       }`;
       resSuccess = false;
@@ -136,32 +136,32 @@ export class CompanyProjectController {
     makeResponse(res, resStatus, resSuccess, resMessage, resData);
   }
 
-  @Patch('companies/:companyId')
-  @ApiOperation({ summary: 'Update company' })
+  @Patch('clients/:clientId')
+  @ApiOperation({ summary: 'Update client' })
   @ApiOkResponseGeneric({
-    type: Company,
-    description: 'Company updated successfully',
+    type: Client,
+    description: 'Client updated successfully',
   })
-  async updateCompany(
-    @Param('companyId', ParseIntPipe) companyId: number,
-    @Body() updateCompanyDto: UpdateCompanyDto,
+  async updateClient(
+    @Param('clientId', ParseIntPipe) clientId: number,
+    @Body() updateClientDto: UpdateClientDto,
     @Res() res: Response,
   ) {
     let resStatus = HttpStatus.OK;
-    let resMessage = 'Company updated successfully';
+    let resMessage = 'Client updated successfully';
     let resData = null;
     let resSuccess = true;
 
     try {
-      const company = await Promisify<Company>(
-        this.companyProjectService.updateCompany(companyId, updateCompanyDto),
+      const client = await Promisify<Client>(
+        this.companyProjectService.updateClient(clientId, updateClientDto),
       );
-      resData = company;
+      resData = client;
     } catch (error) {
       resStatus = error?.status
         ? error.status
         : HttpStatus.INTERNAL_SERVER_ERROR;
-      resMessage = `Failed to update company : ${
+      resMessage = `Failed to update client : ${
         error?.message ?? 'Unknown error'
       }`;
       resSuccess = false;
@@ -172,14 +172,14 @@ export class CompanyProjectController {
 
   // ========== Projects ==========
 
-  @Post('companies/:companyId/projects')
-  @ApiOperation({ summary: 'Create a new project for a company' })
+  @Post('clients/:clientId/projects')
+  @ApiOperation({ summary: 'Create a new project for a client' })
   @ApiOkResponseGeneric({
     type: Project,
     description: 'Project created successfully',
   })
   async createProject(
-    @Param('companyId', ParseIntPipe) companyId: number,
+    @Param('clientId', ParseIntPipe) clientId: number,
     @Body() createProjectDto: CreateProjectDto,
     @Res() res: Response,
   ) {
@@ -190,7 +190,7 @@ export class CompanyProjectController {
 
     try {
       const project = await Promisify<Project>(
-        this.companyProjectService.createProject(companyId, createProjectDto),
+        this.companyProjectService.createProject(clientId, createProjectDto),
       );
       resData = project;
     } catch (error) {
@@ -206,15 +206,15 @@ export class CompanyProjectController {
     makeResponse(res, resStatus, resSuccess, resMessage, resData);
   }
 
-  @Get('companies/:companyId/projects')
-  @ApiOperation({ summary: 'Get all projects for a company' })
+  @Get('clients/:clientId/projects')
+  @ApiOperation({ summary: 'Get all projects for a client' })
   @ApiOkResponseGeneric({
     type: Project,
     isArray: true,
     description: 'Projects fetched successfully',
   })
-  async getProjectsByCompanyId(
-    @Param('companyId', ParseIntPipe) companyId: number,
+  async getProjectsByClientId(
+    @Param('clientId', ParseIntPipe) clientId: number,
     @Res() res: Response,
   ) {
     let resStatus = HttpStatus.OK;
@@ -224,7 +224,7 @@ export class CompanyProjectController {
 
     try {
       const projects = await Promisify<Project[]>(
-        this.companyProjectService.getProjectsByCompanyId(companyId),
+        this.companyProjectService.getProjectsByClientId(clientId),
       );
       resData = projects;
     } catch (error) {

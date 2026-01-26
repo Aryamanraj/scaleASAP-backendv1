@@ -1,18 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export class UpdateCompanyDto {
+export class CreateClientDto {
   @ApiProperty({
-    description: 'Company name',
+    description: 'Client name',
     example: 'Acme Corporation',
-    required: false,
   })
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  name?: string;
+  name: string;
 
   @ApiProperty({
-    description: 'Company slug (unique identifier)',
+    description: 'Client slug (unique identifier)',
     example: 'acme-corp',
     required: false,
   })

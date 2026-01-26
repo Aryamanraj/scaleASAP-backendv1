@@ -3,120 +3,119 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { Promisify } from '../common/helpers/promisifier';
 import { GenericError } from '../common/errors/Generic.error';
-import { CompanyRepoService } from '../repo/company-repo.service';
+import { ClientRepoService } from '../repo/client-repo.service';
 import { ProjectRepoService } from '../repo/project-repo.service';
 import { UserRepoService } from '../repo/user-repo.service';
 import { ProjectUserRepoService } from '../repo/project-user-repo.service';
-import { CreateCompanyDto } from './dto/create-company.dto';
-import { UpdateCompanyDto } from './dto/update-company.dto';
+import { CreateClientDto } from './dto/create-client.dto';
+import { UpdateClientDto } from './dto/update-client.dto';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectUserRole } from '../common/constants/entity.constants';
-import { Company } from '../repo/entities/company.entity';
+import { Client } from '../repo/entities/client.entity';
 import { Project } from '../repo/entities/project.entity';
 import { ProjectUser } from '../repo/entities/project-user.entity';
-import { User } from '../repo/entities/user.entity';
 import { ResultWithError } from '../common/interfaces/index';
 
 @Injectable()
 export class CompanyProjectService {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
-    private companyRepoService: CompanyRepoService,
+    private clientRepoService: ClientRepoService,
     private projectRepoService: ProjectRepoService,
     private userRepoService: UserRepoService,
     private projectUserRepoService: ProjectUserRepoService,
   ) {}
 
-  async createCompany(dto: CreateCompanyDto): Promise<ResultWithError> {
+  async createClient(dto: CreateClientDto): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `CompanyProjectService.createCompany: Creating company with name=${dto.name}`,
+        `CompanyProjectService.createClient: Creating client with name=${dto.name}`,
       );
 
-      const company = await Promisify<Company>(
-        this.companyRepoService.create({
+      const client = await Promisify<Client>(
+        this.clientRepoService.create({
           Name: dto.name,
           Slug: dto.slug,
         }),
       );
 
       this.logger.info(
-        `CompanyProjectService.createCompany: Successfully created company with CompanyID=${company.CompanyID}`,
+        `CompanyProjectService.createClient: Successfully created client with ClientID=${client.ClientID}`,
       );
 
-      return { error: null, data: company };
+      return { error: null, data: client };
     } catch (error) {
       this.logger.error(
-        `CompanyProjectService.createCompany: Error - ${error.stack}`,
+        `CompanyProjectService.createClient: Error - ${error.stack}`,
       );
       return { error: error, data: null };
     }
   }
 
-  async getAllCompanies(): Promise<ResultWithError> {
+  async getAllClients(): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `CompanyProjectService.getAllCompanies: Fetching all companies`,
+        `CompanyProjectService.getAllClients: Fetching all clients`,
       );
 
-      const companies = await Promisify<Company[]>(
-        this.companyRepoService.getAll({}, false),
+      const clients = await Promisify<Client[]>(
+        this.clientRepoService.getAll({}, false),
       );
 
       this.logger.info(
-        `CompanyProjectService.getAllCompanies: Found ${companies.length} companies`,
+        `CompanyProjectService.getAllClients: Found ${clients.length} clients`,
       );
 
-      return { error: null, data: companies };
+      return { error: null, data: clients };
     } catch (error) {
       this.logger.error(
-        `CompanyProjectService.getAllCompanies: Error - ${error.stack}`,
+        `CompanyProjectService.getAllClients: Error - ${error.stack}`,
       );
       return { error: error, data: null };
     }
   }
 
-  async getCompanyById(companyId: number): Promise<ResultWithError> {
+  async getClientById(clientId: number): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `CompanyProjectService.getCompanyById: Fetching company with CompanyID=${companyId}`,
+        `CompanyProjectService.getClientById: Fetching client with ClientID=${clientId}`,
       );
 
-      const company = await Promisify<Company>(
-        this.companyRepoService.get({ where: { CompanyID: companyId } }, true),
+      const client = await Promisify<Client>(
+        this.clientRepoService.get({ where: { ClientID: clientId } }, true),
       );
 
       this.logger.info(
-        `CompanyProjectService.getCompanyById: Successfully fetched company with CompanyID=${companyId}`,
+        `CompanyProjectService.getClientById: Successfully fetched client with ClientID=${clientId}`,
       );
 
-      return { error: null, data: company };
+      return { error: null, data: client };
     } catch (error) {
       this.logger.error(
-        `CompanyProjectService.getCompanyById: Error - ${error.stack}`,
+        `CompanyProjectService.getClientById: Error - ${error.stack}`,
       );
       return { error: error, data: null };
     }
   }
 
-  async updateCompany(
-    companyId: number,
-    dto: UpdateCompanyDto,
+  async updateClient(
+    clientId: number,
+    dto: UpdateClientDto,
   ): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `CompanyProjectService.updateCompany: Updating company with CompanyID=${companyId}`,
+        `CompanyProjectService.updateClient: Updating client with ClientID=${clientId}`,
       );
 
-      // Ensure company exists
-      await Promisify<Company>(
-        this.companyRepoService.get({ where: { CompanyID: companyId } }, true),
+      // Ensure client exists
+      await Promisify<Client>(
+        this.clientRepoService.get({ where: { ClientID: clientId } }, true),
       );
 
-      const updatedCompany = await Promisify<Company>(
-        this.companyRepoService.update(
-          { CompanyID: companyId },
+      const updatedClient = await Promisify<Client>(
+        this.clientRepoService.update(
+          { ClientID: clientId },
           {
             ...(dto.name && { Name: dto.name }),
             ...(dto.slug && { Slug: dto.slug }),
@@ -125,35 +124,35 @@ export class CompanyProjectService {
       );
 
       this.logger.info(
-        `CompanyProjectService.updateCompany: Successfully updated company with CompanyID=${companyId}`,
+        `CompanyProjectService.updateClient: Successfully updated client with ClientID=${clientId}`,
       );
 
-      return { error: null, data: updatedCompany };
+      return { error: null, data: updatedClient };
     } catch (error) {
       this.logger.error(
-        `CompanyProjectService.updateCompany: Error - ${error.stack}`,
+        `CompanyProjectService.updateClient: Error - ${error.stack}`,
       );
       return { error: error, data: null };
     }
   }
 
   async createProject(
-    companyId: number,
+    clientId: number,
     dto: CreateProjectDto,
   ): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `CompanyProjectService.createProject: Creating project for CompanyID=${companyId}, name=${dto.name}`,
+        `CompanyProjectService.createProject: Creating project for ClientID=${clientId}, name=${dto.name}`,
       );
 
-      // Ensure company exists
-      await Promisify<Company>(
-        this.companyRepoService.get({ where: { CompanyID: companyId } }, true),
+      // Ensure client exists
+      await Promisify<Client>(
+        this.clientRepoService.get({ where: { ClientID: clientId } }, true),
       );
 
       const project = await Promisify<Project>(
         this.projectRepoService.create({
-          CompanyID: companyId,
+          ClientID: clientId,
           Name: dto.name,
           ...(dto.status && { Status: dto.status }),
         }),
@@ -172,26 +171,26 @@ export class CompanyProjectService {
     }
   }
 
-  async getProjectsByCompanyId(companyId: number): Promise<ResultWithError> {
+  async getProjectsByClientId(clientId: number): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `CompanyProjectService.getProjectsByCompanyId: Fetching projects for CompanyID=${companyId}`,
+        `CompanyProjectService.getProjectsByClientId: Fetching projects for ClientID=${clientId}`,
       );
 
-      // Ensure company exists
-      await Promisify<Company>(
-        this.companyRepoService.get({ where: { CompanyID: companyId } }, true),
+      // Ensure client exists
+      await Promisify<Client>(
+        this.clientRepoService.get({ where: { ClientID: clientId } }, true),
       );
 
       const projects = await Promisify<Project[]>(
         this.projectRepoService.getAll(
-          { where: { CompanyID: companyId } },
+          { where: { ClientID: clientId } },
           false,
         ),
       );
 
       this.logger.info(
-        `CompanyProjectService.getProjectsByCompanyId: Found ${projects.length} projects for CompanyID=${companyId}`,
+        `CompanyProjectService.getProjectsByClientId: Found ${projects.length} projects for ClientID=${clientId}`,
       );
 
       return { error: null, data: projects };
