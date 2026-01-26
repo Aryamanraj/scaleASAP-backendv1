@@ -5,6 +5,7 @@ import { Logger } from 'winston';
 import { LateLogObserverService } from '../services/late-log-observer.service';
 import { Job } from 'bull';
 import { QUEUE_JOB_NAMES, QueueNames } from '../../common/constants';
+import { Promisify } from '../../common/helpers/promisifier';
 
 @Processor(QueueNames.LATE_LOGS)
 export class LateLogConsumer {
@@ -19,19 +20,16 @@ export class LateLogConsumer {
       this.logger.info(`Processing late send pong [jobId : ${job.id}]`);
       job.progress(0);
 
-      const { error } = await this.lateLogObserverService.handleLateSendPong(
-        job.data.data,
+      await Promisify(
+        this.lateLogObserverService.handleLateSendPong(job.data.data),
       );
 
-      if (error) {
-        this.logger.error(`Moving the job to failed queue [jobId : ${job.id}]`);
-        await job.moveToFailed(error);
-      }
       job.progress(100);
     } catch (error) {
       this.logger.error(
-        `Error in processing late send pong job [jobId : ${job.id}] : ${error.stack}`,
+        `LateLogConsumer: Error processing late send pong job [jobId : ${job.id}] : ${error.stack}`,
       );
+      await job.moveToFailed(error);
     }
   }
 

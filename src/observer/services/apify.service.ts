@@ -5,6 +5,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { firstValueFrom } from 'rxjs';
 import { ResultWithError } from '../../common/interfaces';
+import { Promisify } from '../../common/helpers/promisifier';
 import {
   APIFY_POLL_INTERVAL_MS,
   APIFY_POLL_TIMEOUT_MS,
@@ -195,40 +196,30 @@ export class ApifyService {
         `ApifyService.runActorAndFetchDataset: Running actor ${actorId}`,
       );
 
-      // Start the run
-      const runResult = await this.startActorRun(actorId, input);
-      if (runResult.error) {
-        return { error: runResult.error, data: null };
-      }
-
-      const run = runResult.data;
+      // Start the run - use Promisify to propagate errors via exceptions
+      const run = await Promisify<ApifyActorRun>(
+        this.startActorRun(actorId, input),
+      );
 
       // Wait for completion
-      const completedResult = await this.waitForRun(actorId, run.id);
-      if (completedResult.error) {
-        return { error: completedResult.error, data: null };
-      }
-
-      const completedRun = completedResult.data;
+      const completedRun = await Promisify<ApifyActorRun>(
+        this.waitForRun(actorId, run.id),
+      );
 
       // Fetch dataset items
-      const itemsResult = await this.fetchDatasetItems(
-        completedRun.defaultDatasetId,
-        limit,
+      const items = await Promisify<ApifyDatasetItem[]>(
+        this.fetchDatasetItems(completedRun.defaultDatasetId, limit),
       );
-      if (itemsResult.error) {
-        return { error: itemsResult.error, data: null };
-      }
 
       this.logger.info(
-        `ApifyService.runActorAndFetchDataset: Successfully completed [runId=${completedRun.id}, items=${itemsResult.data.length}]`,
+        `ApifyService.runActorAndFetchDataset: Successfully completed [runId=${completedRun.id}, items=${items.length}]`,
       );
 
       return {
         error: null,
         data: {
           run: completedRun,
-          items: itemsResult.data,
+          items: items,
         },
       };
     } catch (error) {

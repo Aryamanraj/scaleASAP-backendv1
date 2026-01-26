@@ -5,6 +5,7 @@ import { Logger } from 'winston';
 import { LogObserverService } from '../services/log-observer.service';
 import { Job } from 'bull';
 import { QUEUE_JOB_NAMES, QueueNames } from '../../common/constants';
+import { Promisify } from '../../common/helpers/promisifier';
 
 @Processor(QueueNames.NEW_LOGS)
 export class LogConsumer {
@@ -19,19 +20,14 @@ export class LogConsumer {
       this.logger.info(`Processing send pong [jobId : ${job.id}]`);
       job.progress(0);
 
-      const { error } = await this.logObserverService.handleSendPong(
-        job.data.data,
-      );
+      await Promisify(this.logObserverService.handleSendPong(job.data.data));
 
-      if (error) {
-        this.logger.error(`Moving the job to failed queue [jobId : ${job.id}]`);
-        await job.moveToFailed(error);
-      }
       job.progress(100);
     } catch (error) {
       this.logger.error(
-        `Error in processing send pong job [jobId : ${job.id}] : ${error.stack}`,
+        `LogConsumer: Error processing send pong job [jobId : ${job.id}] : ${error.stack}`,
       );
+      await job.moveToFailed(error);
     }
   }
 

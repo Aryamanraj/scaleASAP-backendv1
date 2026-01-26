@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { RpcService } from '../../rpc/rpc.service';
 import { Logger } from 'winston';
+import { ResultWithError } from '../../common/interfaces';
 
 @Injectable()
 export class LateLogObserverService {
@@ -10,7 +11,7 @@ export class LateLogObserverService {
     private rpcService: RpcService,
   ) {}
 
-  async handleLateSendPong(data: any): Promise<{ error }> {
+  async handleLateSendPong(data: any): Promise<ResultWithError> {
     try {
       this.logger.info(
         `Processing late send pong from logs queue [data : ${JSON.stringify(
@@ -35,14 +36,14 @@ export class LateLogObserverService {
       // );
       // if (lateSendPongError) throw lateSendPongError;
 
-      return { error: null };
+      return { error: null, data: true };
     } catch (error) {
       this.logger.error(
         `Error in processing withdraw event from logs queue [data : ${JSON.stringify(
           data,
         )}] : ${error.stack}`,
       );
-      return { error };
+      return { error, data: null };
     }
   }
 }
