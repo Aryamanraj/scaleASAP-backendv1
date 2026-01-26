@@ -49,47 +49,25 @@ export class ModuleRunConsumer {
 
       job.progress(30);
 
-      // Execute module via dispatcher
-      const { error } = await this.moduleDispatcherService.execute(moduleRun);
+      // Execute module via dispatcher - uses Promisify to unwrap ResultWithError
+      await Promisify(this.moduleDispatcherService.execute(moduleRun));
 
       job.progress(80);
 
-      if (error) {
-        // Update status to FAILED
-        await Promisify(
-          this.moduleRunRepoService.update(
-            { ModuleRunID: moduleRunId },
-            {
-              Status: ModuleRunStatus.FAILED,
-              FinishedAt: new Date(),
-              ErrorJson: {
-                message: error.message,
-                stack: error.stack,
-              },
-            },
-          ),
-        );
+      // Update status to COMPLETED
+      await Promisify(
+        this.moduleRunRepoService.update(
+          { ModuleRunID: moduleRunId },
+          {
+            Status: ModuleRunStatus.COMPLETED,
+            FinishedAt: new Date(),
+          },
+        ),
+      );
 
-        this.logger.error(
-          `ModuleRunConsumer: Module run failed [moduleRunId: ${moduleRunId}]`,
-          { error: error.message },
-        );
-      } else {
-        // Update status to COMPLETED
-        await Promisify(
-          this.moduleRunRepoService.update(
-            { ModuleRunID: moduleRunId },
-            {
-              Status: ModuleRunStatus.COMPLETED,
-              FinishedAt: new Date(),
-            },
-          ),
-        );
-
-        this.logger.info(
-          `ModuleRunConsumer: Module run completed successfully [moduleRunId: ${moduleRunId}]`,
-        );
-      }
+      this.logger.info(
+        `ModuleRunConsumer: Module run completed successfully [moduleRunId: ${moduleRunId}]`,
+      );
 
       job.progress(100);
     } catch (error) {

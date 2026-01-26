@@ -2,6 +2,10 @@ import { Injectable, Inject } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { ModuleRun } from '../../repo/entities/module-run.entity';
+import { Module } from '../../repo/entities/module.entity';
+import { ModuleRepoService } from '../../repo/module-repo.service';
+import { Promisify } from '../../common/helpers/promisifier';
+import { ModuleScope } from '../../common/constants/entity.constants';
 import { NoopModuleHandler } from './handlers/noop-module.handler';
 import { ManualDocumentConnectorHandler } from './handlers/manual-document-connector.handler';
 import { CoreIdentityEnricherHandler } from './handlers/core-identity-enricher.handler';
@@ -14,6 +18,7 @@ import { LinkedinPostsNormalizerHandler } from '../../enrichers/linkedin-posts-n
 import { ContentChunkerHandler } from '../../enrichers/content-chunker/handlers/content-chunker.handler';
 import { LinkedinPostsChunkEvidenceExtractorHandler } from '../../enrichers/linkedin-posts-chunk-evidence-extractor/handlers/linkedin-posts-chunk-evidence-extractor.handler';
 import { PersonalityActiveTimesReducerHandler } from '../../enrichers/personality-active-times-reducer/handlers/personality-active-times-reducer.handler';
+import { ProspectSearchConnectorHandler } from '../../connectors/prospect/handlers/prospect-search-connector.handler';
 import {
   LINKEDIN_PROFILE_CONNECTOR_KEY,
   LINKEDIN_POSTS_CONNECTOR_KEY,
@@ -25,6 +30,7 @@ import { ResultWithError } from '../../common/interfaces';
 export class ModuleDispatcherService {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
+    private moduleRepoService: ModuleRepoService,
     private noopModuleHandler: NoopModuleHandler,
     private manualDocumentConnectorHandler: ManualDocumentConnectorHandler,
     private coreIdentityEnricherHandler: CoreIdentityEnricherHandler,
@@ -37,12 +43,34 @@ export class ModuleDispatcherService {
     private contentChunkerHandler: ContentChunkerHandler,
     private linkedinPostsChunkEvidenceExtractorHandler: LinkedinPostsChunkEvidenceExtractorHandler,
     private personalityActiveTimesReducerHandler: PersonalityActiveTimesReducerHandler,
+    private prospectSearchConnectorHandler: ProspectSearchConnectorHandler,
   ) {}
 
   async execute(run: ModuleRun): Promise<ResultWithError> {
     try {
+      // Load module to determine scope
+      const module = await Promisify<Module | null>(
+        this.moduleRepoService.get(
+          {
+            where: {
+              ModuleKey: run.ModuleKey,
+              Version: run.ModuleVersion,
+            },
+          },
+          false,
+        ),
+      );
+
+      const scope = module?.Scope || ModuleScope.PERSON_LEVEL;
+      const scopeLabel =
+        scope === ModuleScope.PROJECT_LEVEL ? 'PROJECT_LEVEL' : 'PERSON_LEVEL';
+
       this.logger.info(
-        `ModuleDispatcherService.execute: Dispatching run for module ${run.ModuleKey} [moduleRunId=${run.ModuleRunID}, moduleKey=${run.ModuleKey}]`,
+        `ModuleDispatcherService.execute: Dispatching ${scopeLabel} run for module ${
+          run.ModuleKey
+        } [moduleRunId=${run.ModuleRunID}, moduleKey=${
+          run.ModuleKey
+        }, personId=${run.PersonID || 'null'}]`,
       );
 
       // Dispatch based on module key
@@ -73,6 +101,8 @@ export class ModuleDispatcherService {
           );
         case MODULE_KEYS.PERSONALITY_ACTIVE_TIMES_REDUCER:
           return await this.personalityActiveTimesReducerHandler.execute(run);
+        case MODULE_KEYS.PROSPECT_SEARCH_CONNECTOR:
+          return await this.prospectSearchConnectorHandler.execute(run);
         default:
           throw new Error(
             `No handler registered for module key: ${run.ModuleKey}`,

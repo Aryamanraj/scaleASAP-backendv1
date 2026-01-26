@@ -27,6 +27,7 @@ import { LinkedinPostsNormalizerModule } from '../enrichers/linkedin-posts-norma
 import { ContentChunkerModule } from '../enrichers/content-chunker/content-chunker.module';
 import { LinkedinPostsChunkEvidenceExtractorModule } from '../enrichers/linkedin-posts-chunk-evidence-extractor/linkedin-posts-chunk-evidence-extractor.module';
 import { PersonalityActiveTimesReducerModule } from '../enrichers/personality-active-times-reducer/personality-active-times-reducer.module';
+import { ProspectModule } from '../connectors/prospect/prospect.module';
 import { AIModule } from '../ai/ai.module';
 
 @Module({
@@ -47,6 +48,7 @@ import { AIModule } from '../ai/ai.module';
     ContentChunkerModule,
     LinkedinPostsChunkEvidenceExtractorModule,
     PersonalityActiveTimesReducerModule,
+    ProspectModule,
     AIModule,
   ],
   providers: [
