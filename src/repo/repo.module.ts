@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Company } from './entities/company.entity';
+import { Client } from './entities/client.entity';
 import { Project } from './entities/project.entity';
 import { User } from './entities/user.entity';
 import { ProjectUser } from './entities/project-user.entity';
@@ -15,7 +15,10 @@ import { PostItem } from './entities/post-item.entity';
 import { ContentChunk } from './entities/content-chunk.entity';
 import { ContentChunkItem } from './entities/content-chunk-item.entity';
 import { ChunkEvidence } from './entities/chunk-evidence.entity';
-import { CompanyRepoService } from './company-repo.service';
+import { DiscoveryRunItem } from './entities/discovery-run-item.entity';
+import { Location } from './entities/location.entity';
+import { Organization } from './entities/organization.entity';
+import { ClientRepoService } from './client-repo.service';
 import { ProjectRepoService } from './project-repo.service';
 import { UserRepoService } from './user-repo.service';
 import { ProjectUserRepoService } from './project-user-repo.service';
@@ -30,9 +33,12 @@ import { PostItemRepoService } from './post-item-repo.service';
 import { ContentChunkRepoService } from './content-chunk-repo.service';
 import { ContentChunkItemRepoService } from './content-chunk-item-repo.service';
 import { ChunkEvidenceRepoService } from './chunk-evidence-repo.service';
+import { DiscoveryRunItemRepoService } from './discovery-run-item-repo.service';
+import { LocationRepoService } from './location-repo.service';
+import { OrganizationRepoService } from './organization-repo.service';
 
 export const entities = [
-  Company,
+  Client,
   Project,
   User,
   ProjectUser,
@@ -47,10 +53,13 @@ export const entities = [
   ContentChunk,
   ContentChunkItem,
   ChunkEvidence,
+  DiscoveryRunItem,
+  Location,
+  Organization,
 ];
 
 export const repoServices = [
-  CompanyRepoService,
+  ClientRepoService,
   ProjectRepoService,
   UserRepoService,
   ProjectUserRepoService,
@@ -65,6 +74,9 @@ export const repoServices = [
   ContentChunkRepoService,
   ContentChunkItemRepoService,
   ChunkEvidenceRepoService,
+  DiscoveryRunItemRepoService,
+  LocationRepoService,
+  OrganizationRepoService,
 ];
 
 @Module({
