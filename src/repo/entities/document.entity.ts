@@ -34,8 +34,8 @@ export class Document extends BaseEntity {
   ProjectID: number;
 
   @ApiProperty()
-  @Column({ type: 'bigint', nullable: false })
-  PersonID: number;
+  @Column({ type: 'bigint', nullable: true })
+  PersonID: number | null;
 
   @ApiProperty()
   @Column({ length: 64, nullable: false })

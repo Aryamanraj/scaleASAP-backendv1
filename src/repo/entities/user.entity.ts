@@ -9,7 +9,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { Company } from './company.entity';
+import { Client } from './client.entity';
 import {
   UserRole,
   EntityStatus,
@@ -23,7 +23,7 @@ export class User extends BaseEntity {
 
   @ApiProperty()
   @Column({ type: 'bigint', nullable: false })
-  CompanyID: number;
+  ClientID: number;
 
   @ApiProperty()
   @Column({ length: 255, unique: true, nullable: false })
@@ -68,7 +68,7 @@ export class User extends BaseEntity {
   })
   UpdatedAt: Date;
 
-  @ManyToOne(() => Company)
-  @JoinColumn({ name: 'CompanyID' })
-  Company: Company;
+  @ManyToOne(() => Client)
+  @JoinColumn({ name: 'ClientID' })
+  Client: Client;
 }

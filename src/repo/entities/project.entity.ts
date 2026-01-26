@@ -10,11 +10,11 @@ import {
   Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { Company } from './company.entity';
+import { Client } from './client.entity';
 import { ProjectStatus } from '../../common/constants/entity.constants';
 
 @Entity({ name: 'Projects' })
-@Index(['CompanyID', 'Status'])
+@Index(['ClientID', 'Status'])
 export class Project extends BaseEntity {
   @ApiProperty()
   @PrimaryGeneratedColumn()
@@ -22,7 +22,7 @@ export class Project extends BaseEntity {
 
   @ApiProperty()
   @Column({ type: 'bigint', nullable: false })
-  CompanyID: number;
+  ClientID: number;
 
   @ApiProperty()
   @Column({ length: 255, nullable: false })
@@ -51,7 +51,7 @@ export class Project extends BaseEntity {
   })
   UpdatedAt: Date;
 
-  @ManyToOne(() => Company)
-  @JoinColumn({ name: 'CompanyID' })
-  Company: Company;
+  @ManyToOne(() => Client)
+  @JoinColumn({ name: 'ClientID' })
+  Client: Client;
 }

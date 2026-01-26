@@ -8,7 +8,10 @@ import {
   Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { ModuleType } from '../../common/constants/entity.constants';
+import {
+  ModuleType,
+  ModuleScope,
+} from '../../common/constants/entity.constants';
 
 @Entity({ name: 'Modules' })
 @Index(['ModuleKey', 'Version'])
@@ -28,6 +31,15 @@ export class Module extends BaseEntity {
     nullable: false,
   })
   ModuleType: ModuleType;
+
+  @ApiProperty({ enum: Object.values(ModuleScope) })
+  @Column({
+    type: 'enum',
+    enum: ModuleScope,
+    default: ModuleScope.PERSON_LEVEL,
+    nullable: false,
+  })
+  Scope: ModuleScope;
 
   @ApiProperty()
   @Column({ length: 32, nullable: false })

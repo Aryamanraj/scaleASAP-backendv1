@@ -27,12 +27,12 @@ export class ModuleRun extends BaseEntity {
   ProjectID: number;
 
   @ApiProperty()
-  @Column({ type: 'bigint', nullable: false })
-  PersonID: number;
+  @Column({ type: 'bigint', nullable: true })
+  PersonID: number | null;
 
   @ApiProperty()
-  @Column({ type: 'bigint', nullable: false })
-  TriggeredByUserID: number;
+  @Column({ type: 'bigint', nullable: true })
+  TriggeredByUserID: number | null;
 
   @ApiProperty()
   @Column({ length: 128, nullable: false })
