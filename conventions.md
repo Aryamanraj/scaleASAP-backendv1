@@ -594,6 +594,72 @@ const result = await Promisify<boolean>(...);
 const data = await Promisify<any>(...);
 ```
 
+### ⚠️ STRICT ENFORCEMENT: Forbidden Patterns
+
+The following patterns are **STRICTLY FORBIDDEN** and must never appear in the codebase:
+
+**1. Manual Error Destructuring:**
+```typescript
+// ❌ FORBIDDEN - Never manually destructure ResultWithError
+const { data, error } = await this.service.method();
+if (error) {
+  // handle error
+}
+
+// ✅ CORRECT - Always use Promisify
+const data = await Promisify<T>(this.service.method());
+```
+
+**2. Defensive `if (error)` Branching:**
+```typescript
+// ❌ FORBIDDEN - No defensive branching
+const result = await this.service.method();
+if (result.error) {
+  return { error: result.error, data: null };
+}
+
+// ✅ CORRECT - Use Promisify to propagate errors via exceptions
+const data = await Promisify<T>(this.service.method());
+```
+
+**3. Try-Catch Without Rethrow (except at boundaries):**
+```typescript
+// ❌ FORBIDDEN - Silent error swallowing
+try {
+  await someOperation();
+} catch (error) {
+  this.logger.error(error.message);
+  // Error is swallowed!
+}
+
+// ✅ CORRECT - Add context and rethrow
+try {
+  await someOperation();
+} catch (error) {
+  this.logger.error(`Context: ${error.message}`);
+  throw error; // Or throw with additional context
+}
+```
+
+**Where Try-Catch IS Allowed:**
+- **Module Handlers/Entry Points**: Top-level catch that updates status and logs
+- **Queue Consumers**: Job processing boundaries that handle failures
+- **Controllers**: HTTP boundary that translates errors to status codes
+- **Services returning ResultWithError**: The try-catch that wraps the return
+
+**Internal Service Method Calls:**
+When calling another method in the same service that returns `ResultWithError`, always use `Promisify()`:
+```typescript
+// ❌ FORBIDDEN - Manual error check within same service
+const runResult = await this.startActorRun(actorId, input);
+if (runResult.error) {
+  return { error: runResult.error, data: null };
+}
+
+// ✅ CORRECT - Use Promisify even for internal calls
+const run = await Promisify<ActorRun>(this.startActorRun(actorId, input));
+```
+
 ---
 
 ## Logging
