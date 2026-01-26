@@ -8,6 +8,7 @@ export const MODULE_KEYS = {
   MANUAL_DOCUMENT_CONNECTOR: 'manual-document-connector',
   LINKEDIN_PROFILE_CONNECTOR: 'linkedin-profile-connector',
   LINKEDIN_POSTS_CONNECTOR: 'linkedin-posts-connector',
+  PROSPECT_SEARCH_CONNECTOR: 'prospect-search-connector',
 
   // Enrichers
   CORE_IDENTITY_ENRICHER: 'core-identity-enricher',
