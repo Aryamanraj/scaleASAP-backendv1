@@ -136,4 +136,100 @@ export class PersonRepoService {
       return { data: null, error };
     }
   }
+
+  async count(where?: FindOptionsWhere<Person>): Promise<ResultWithError> {
+    try {
+      this.logger.info(`Counting persons [where: ${JSON.stringify(where)}]`);
+
+      const result = await this.personRepo.count({ where });
+
+      this.logger.info(`Person count [count: ${result}]`);
+      return { data: result, error: null };
+    } catch (error) {
+      this.logger.error(
+        `Error in counting persons [where: ${JSON.stringify(where)}]: ${
+          error.stack
+        }`,
+      );
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Upsert person by LinkedinUrl (unique constraint).
+   * If person with matching LinkedinUrl exists, updates it; otherwise creates new.
+   * @returns The upserted Person entity
+   */
+  async upsert(person: Partial<Person>): Promise<ResultWithError> {
+    try {
+      if (!person.LinkedinUrl) {
+        throw new GenericError(
+          'LinkedinUrl is required for person upsert',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      this.logger.info(`Upserting person [LinkedinUrl: ${person.LinkedinUrl}]`);
+
+      // Try to find existing person by LinkedinUrl
+      const existing = await this.personRepo.findOne({
+        where: { LinkedinUrl: person.LinkedinUrl },
+      });
+
+      if (existing) {
+        // Update existing person - merge new data
+        const updateData: QueryDeepPartialEntity<Person> = {};
+
+        if (person.LinkedinSlug !== undefined)
+          updateData.LinkedinSlug = person.LinkedinSlug;
+        if (person.ExternalUrn !== undefined)
+          updateData.ExternalUrn = person.ExternalUrn;
+        if (person.PrimaryDisplayName !== undefined)
+          updateData.PrimaryDisplayName = person.PrimaryDisplayName;
+        if (person.FirstName !== undefined)
+          updateData.FirstName = person.FirstName;
+        if (person.LastName !== undefined)
+          updateData.LastName = person.LastName;
+        if (person.Headline !== undefined)
+          updateData.Headline = person.Headline;
+        if (person.SubTitle !== undefined)
+          updateData.SubTitle = person.SubTitle;
+        if (person.CurrentOrganizationID !== undefined)
+          updateData.CurrentOrganizationID = person.CurrentOrganizationID;
+        if (person.LocationID !== undefined)
+          updateData.LocationID = person.LocationID;
+        if (person.Status !== undefined) updateData.Status = person.Status;
+
+        if (Object.keys(updateData).length > 0) {
+          await this.personRepo.update(
+            { PersonID: existing.PersonID },
+            updateData,
+          );
+        }
+
+        const updatedPerson = await this.personRepo.findOne({
+          where: { PersonID: existing.PersonID },
+        });
+
+        this.logger.info(
+          `Person upserted (updated) [PersonID: ${existing.PersonID}]`,
+        );
+        return { data: updatedPerson, error: null };
+      } else {
+        // Create new person
+        const newPerson = this.personRepo.create(person);
+        const result = await this.personRepo.save(newPerson);
+
+        this.logger.info(
+          `Person upserted (created) [PersonID: ${result.PersonID}]`,
+        );
+        return { data: result, error: null };
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error in upserting person [LinkedinUrl: ${person.LinkedinUrl}]: ${error.stack}`,
+      );
+      return { data: null, error };
+    }
+  }
 }

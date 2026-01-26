@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  Unique,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Person } from './person.entity';
@@ -15,6 +16,7 @@ import { Project } from './project.entity';
 import { User } from './user.entity';
 
 @Entity({ name: 'PersonProjects' })
+@Unique('UQ_PERSON_PROJECT', ['ProjectID', 'PersonID'])
 @Index(['PersonID', 'ProjectID'])
 export class PersonProject extends BaseEntity {
   @ApiProperty()
