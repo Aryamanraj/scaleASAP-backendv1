@@ -6,7 +6,10 @@ import {
   IsOptional,
   MaxLength,
 } from 'class-validator';
-import { ModuleType } from '../../common/constants/entity.constants';
+import {
+  ModuleType,
+  ModuleScope,
+} from '../../common/constants/entity.constants';
 
 export class RegisterModuleDto {
   @ApiProperty({ maxLength: 128 })
@@ -17,6 +20,11 @@ export class RegisterModuleDto {
   @ApiProperty({ enum: Object.values(ModuleType) })
   @IsEnum(ModuleType)
   moduleType: ModuleType;
+
+  @ApiProperty({ enum: Object.values(ModuleScope), required: false })
+  @IsOptional()
+  @IsEnum(ModuleScope)
+  scope?: ModuleScope;
 
   @ApiProperty({ maxLength: 32 })
   @IsString()

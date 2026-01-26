@@ -9,16 +9,24 @@ import { ModuleRepoService } from '../repo/module-repo.service';
 import { ModuleRunRepoService } from '../repo/module-run-repo.service';
 import { ProjectRepoService } from '../repo/project-repo.service';
 import { PersonRepoService } from '../repo/person-repo.service';
+import { PersonProjectRepoService } from '../repo/person-project-repo.service';
 import { UserRepoService } from '../repo/user-repo.service';
 import { Promisify } from '../common/helpers/promisifier';
 import { RegisterModuleDto } from './dto/register-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
-import { CreateModuleRunDto } from './dto/create-module-run.dto';
+import {
+  CreateModuleRunDto,
+  CreateProjectLevelModuleRunDto,
+} from './dto/create-module-run.dto';
 import { ListModuleRunsQueryDto } from './dto/list-module-runs-query.dto';
 import { ListModulesQueryDto } from './dto/list-modules-query.dto';
 import { Module } from '../repo/entities/module.entity';
 import { ModuleRun } from '../repo/entities/module-run.entity';
-import { ModuleRunStatus } from '../common/constants/entity.constants';
+import { PersonProject } from '../repo/entities/person-project.entity';
+import {
+  ModuleRunStatus,
+  ModuleScope,
+} from '../common/constants/entity.constants';
 
 @Injectable()
 export class ModuleRunnerService {
@@ -29,6 +37,7 @@ export class ModuleRunnerService {
     private moduleRunRepoService: ModuleRunRepoService,
     private projectRepoService: ProjectRepoService,
     private personRepoService: PersonRepoService,
+    private personProjectRepoService: PersonProjectRepoService,
     private userRepoService: UserRepoService,
   ) {}
 
@@ -43,6 +52,7 @@ export class ModuleRunnerService {
       const moduleData = {
         ModuleKey: dto.moduleKey,
         ModuleType: dto.moduleType,
+        Scope: dto.scope || ModuleScope.PERSON_LEVEL,
         Version: dto.version,
         ConfigSchemaJson: dto.configSchemaJson,
         IsEnabled: dto.isEnabled !== undefined ? dto.isEnabled : true,
@@ -163,11 +173,6 @@ export class ModuleRunnerService {
         this.projectRepoService.get({ where: { ProjectID: projectId } }, true),
       );
 
-      // Validate person exists
-      await Promisify(
-        this.personRepoService.get({ where: { PersonID: personId } }, true),
-      );
-
       // Validate triggered by user exists
       await Promisify(
         this.userRepoService.get(
@@ -212,10 +217,51 @@ export class ModuleRunnerService {
         module = modules[0];
       }
 
+      // Enforce scope-based rules
+      if (module.Scope === ModuleScope.PERSON_LEVEL) {
+        // PERSON_LEVEL: PersonID MUST be provided and validated
+        if (!personId) {
+          throw new Error(
+            `Module ${module.ModuleKey} is PERSON_LEVEL but PersonID was not provided.`,
+          );
+        }
+
+        // Validate person exists
+        await Promisify(
+          this.personRepoService.get({ where: { PersonID: personId } }, true),
+        );
+
+        // Validate person is associated with project via PersonProjects
+        const personProject = await Promisify<PersonProject | null>(
+          this.personProjectRepoService.get(
+            {
+              where: {
+                ProjectID: projectId,
+                PersonID: personId,
+              },
+            },
+            false,
+          ),
+        );
+
+        if (!personProject) {
+          throw new Error(
+            `Person ${personId} is not associated with project ${projectId}. Add person to project via PersonProjects first.`,
+          );
+        }
+      } else if (module.Scope === ModuleScope.PROJECT_LEVEL) {
+        // PROJECT_LEVEL: PersonID MUST be null
+        if (personId) {
+          throw new Error(
+            `Module ${module.ModuleKey} is PROJECT_LEVEL but PersonID was provided. PROJECT_LEVEL modules do not accept a PersonID.`,
+          );
+        }
+      }
+
       // Create ModuleRun
       const moduleRunData = {
         ProjectID: projectId,
-        PersonID: personId,
+        PersonID: module.Scope === ModuleScope.PERSON_LEVEL ? personId : null,
         TriggeredByUserID: dto.triggeredByUserId,
         ModuleKey: module.ModuleKey,
         ModuleVersion: module.Version,
@@ -224,7 +270,118 @@ export class ModuleRunnerService {
       };
 
       this.logger.info(
-        `ModuleRunnerService.createModuleRun: Creating run [data=${JSON.stringify(
+        `ModuleRunnerService.createModuleRun: Creating ${
+          module.Scope
+        } run [data=${JSON.stringify(moduleRunData)}]`,
+      );
+
+      const moduleRun = await Promisify<ModuleRun>(
+        this.moduleRunRepoService.create(moduleRunData),
+      );
+
+      // Enqueue job
+      await this.moduleRunsQueue.add(QUEUE_JOB_NAMES.EXECUTE_MODULE_RUN, {
+        moduleRunId: moduleRun.ModuleRunID,
+      });
+
+      this.logger.info(
+        `ModuleRunnerService.createModuleRun success [moduleRunId=${moduleRun.ModuleRunID}, scope=${module.Scope}]`,
+      );
+      return { error: null, data: moduleRun };
+    } catch (error) {
+      this.logger.error(
+        `ModuleRunnerService.createModuleRun error [error=${error.message}, projectId=${projectId}, personId=${personId}]`,
+      );
+      return { error: error, data: null };
+    }
+  }
+
+  /**
+   * Create a PROJECT_LEVEL module run (no PersonID).
+   * Only accepts modules with Scope = PROJECT_LEVEL.
+   */
+  async createProjectLevelModuleRun(
+    projectId: number,
+    dto: CreateProjectLevelModuleRunDto,
+  ): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `ModuleRunnerService.createProjectLevelModuleRun called [projectId=${projectId}, dto=${JSON.stringify(
+          dto,
+        )}]`,
+      );
+
+      // Validate project exists
+      await Promisify(
+        this.projectRepoService.get({ where: { ProjectID: projectId } }, true),
+      );
+
+      // Validate triggered by user exists (only if provided)
+      if (dto.triggeredByUserId) {
+        await Promisify(
+          this.userRepoService.get(
+            { where: { UserID: dto.triggeredByUserId } },
+            true,
+          ),
+        );
+      }
+
+      // Find module - if version not specified, get latest enabled version
+      let module: Module;
+      if (dto.moduleVersion) {
+        module = await Promisify<Module>(
+          this.moduleRepoService.get(
+            {
+              where: {
+                ModuleKey: dto.moduleKey,
+                Version: dto.moduleVersion,
+                IsEnabled: true,
+              },
+            },
+            true,
+          ),
+        );
+      } else {
+        // Find latest enabled version for this module key
+        const modules = await Promisify<Module[]>(
+          this.moduleRepoService.getAll({
+            where: {
+              ModuleKey: dto.moduleKey,
+              IsEnabled: true,
+            },
+            order: {
+              CreatedAt: 'DESC',
+            },
+          }),
+        );
+
+        if (modules.length === 0) {
+          throw new Error(`No enabled module found with key: ${dto.moduleKey}`);
+        }
+
+        module = modules[0];
+      }
+
+      // Enforce PROJECT_LEVEL scope
+      if (module.Scope !== ModuleScope.PROJECT_LEVEL) {
+        throw new Error(
+          `Module ${module.ModuleKey} has Scope=${module.Scope}. This endpoint only accepts PROJECT_LEVEL modules. Use the person-level endpoint instead.`,
+        );
+      }
+
+      // Create ModuleRun with PersonID = null
+      const moduleRunData = {
+        ProjectID: projectId,
+        PersonID: null,
+        TriggeredByUserID: dto.triggeredByUserId || null,
+        ModuleKey: module.ModuleKey,
+        ModuleVersion: module.Version,
+        Status: ModuleRunStatus.QUEUED,
+        InputConfigJson: dto.inputConfigJson,
+      };
+
+      this.logger.info(
+        `ModuleRunnerService.createProjectLevelModuleRun: Creating PROJECT_LEVEL run [data=${JSON.stringify(
           moduleRunData,
         )}]`,
       );
@@ -239,12 +396,12 @@ export class ModuleRunnerService {
       });
 
       this.logger.info(
-        `ModuleRunnerService.createModuleRun success [moduleRunId=${moduleRun.ModuleRunID}]`,
+        `ModuleRunnerService.createProjectLevelModuleRun success [moduleRunId=${moduleRun.ModuleRunID}]`,
       );
       return { error: null, data: moduleRun };
     } catch (error) {
       this.logger.error(
-        `ModuleRunnerService.createModuleRun error [error=${error.message}, projectId=${projectId}, personId=${personId}]`,
+        `ModuleRunnerService.createProjectLevelModuleRun error [error=${error.message}, projectId=${projectId}]`,
       );
       return { error: error, data: null };
     }

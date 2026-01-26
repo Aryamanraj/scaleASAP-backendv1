@@ -24,7 +24,10 @@ import { ModuleRun } from '../repo/entities/module-run.entity';
 import { ModuleRunnerService } from './module-runner.service';
 import { RegisterModuleDto } from './dto/register-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
-import { CreateModuleRunDto } from './dto/create-module-run.dto';
+import {
+  CreateModuleRunDto,
+  CreateProjectLevelModuleRunDto,
+} from './dto/create-module-run.dto';
 import { ListModuleRunsQueryDto } from './dto/list-module-runs-query.dto';
 import { ListModulesQueryDto } from './dto/list-modules-query.dto';
 
@@ -142,6 +145,51 @@ export class ModulesController {
 @UsePipes(new ValidationPipe({ transform: true }))
 export class ModuleRunsProjectController {
   constructor(private moduleRunnerService: ModuleRunnerService) {}
+
+  /**
+   * Create a PROJECT_LEVEL module run (no PersonID).
+   * Only accepts modules with Scope = PROJECT_LEVEL.
+   */
+  @Post(':projectId/modules/run')
+  @ApiOperation({
+    summary: 'Create a PROJECT_LEVEL module run',
+    description:
+      'Creates a module run for PROJECT_LEVEL modules. PersonID will be null.',
+  })
+  @ApiOkResponseGeneric({
+    type: ModuleRun,
+    description: 'Project-level module run created successfully',
+  })
+  async createProjectLevelModuleRun(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @Body() createModuleRunDto: CreateProjectLevelModuleRunDto,
+    @Res() res: Response,
+  ) {
+    let resStatus = HttpStatus.CREATED;
+    let resMessage = 'Project-level module run created successfully';
+    let resData = null;
+    let resSuccess = true;
+
+    try {
+      const moduleRun = await Promisify<ModuleRun>(
+        this.moduleRunnerService.createProjectLevelModuleRun(
+          projectId,
+          createModuleRunDto,
+        ),
+      );
+      resData = moduleRun;
+    } catch (error) {
+      resStatus = error?.status
+        ? error.status
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+      resMessage = `Failed to create project-level module run : ${
+        error?.message ?? 'Unknown error'
+      }`;
+      resSuccess = false;
+    }
+
+    makeResponse(res, resStatus, resSuccess, resMessage, resData);
+  }
 
   @Post(':projectId/persons/:personId/runs')
   @ApiOperation({ summary: 'Create a new module run' })
