@@ -8,6 +8,7 @@ import { PersonProjectRepoService } from '../repo/person-project-repo.service';
 import { ProjectRepoService } from '../repo/project-repo.service';
 import { UserRepoService } from '../repo/user-repo.service';
 import { Promisify } from '../common/helpers/promisifier';
+import { normalizeLinkedinUrl } from '../common/helpers/linkedinUrl';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 import { ListPersonsQueryDto } from './dto/list-persons-query.dto';
@@ -28,8 +29,11 @@ export class PersonService {
   async createPerson(dto: CreatePersonDto): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `PersonService.createPerson called [dto=${JSON.stringify(dto)}]`,
+        `PersonService.createPerson called [linkedinUrl=${dto.linkedinUrl}]`,
       );
+
+      // Normalize the LinkedIn URL
+      const normalizedUrl = normalizeLinkedinUrl(dto.linkedinUrl);
 
       // Validate createdByUser exists
       await Promisify(
@@ -39,7 +43,23 @@ export class PersonService {
         ),
       );
 
+      // Check if person already exists with this LinkedIn URL
+      const existingPerson = await Promisify<Person | null>(
+        this.personRepoService.get(
+          { where: { LinkedinUrl: normalizedUrl } },
+          false,
+        ),
+      );
+
+      if (existingPerson) {
+        this.logger.info(
+          `PersonService.createPerson - Person already exists [personId=${existingPerson.PersonID}, linkedinUrl=${normalizedUrl}]`,
+        );
+        return { error: null, data: existingPerson };
+      }
+
       const personData = {
+        LinkedinUrl: normalizedUrl,
         PrimaryDisplayName: dto.primaryDisplayName || null,
         Status: dto.status || EntityStatus.ACTIVE,
         CreatedByUserID: dto.createdByUserId,
@@ -50,14 +70,111 @@ export class PersonService {
       );
 
       this.logger.info(
-        `PersonService.createPerson success [personId=${person.PersonID}]`,
+        `PersonService.createPerson success [personId=${person.PersonID}, linkedinUrl=${normalizedUrl}]`,
       );
       return { error: null, data: person };
     } catch (error) {
       this.logger.error(
-        `PersonService.createPerson error [error=${
-          error.message
-        }, dto=${JSON.stringify(dto)}]`,
+        `PersonService.createPerson error [error=${error.message}, linkedinUrl=${dto.linkedinUrl}]`,
+      );
+      return { error: error, data: null };
+    }
+  }
+
+  /**
+   * Get or create a Person by their LinkedIn URL.
+   * If a person with the normalized LinkedIn URL exists, returns it.
+   * Otherwise, creates a new Person record.
+   *
+   * @param linkedinUrl - The LinkedIn profile URL
+   * @param createdByUserId - The user ID who is creating this person
+   * @param primaryDisplayName - Optional display name for the person
+   */
+  async getOrCreateByLinkedinUrl(
+    linkedinUrl: string,
+    createdByUserId: number,
+    primaryDisplayName?: string,
+  ): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `PersonService.getOrCreateByLinkedinUrl called [linkedinUrl=${linkedinUrl}]`,
+      );
+
+      // Normalize the LinkedIn URL
+      const normalizedUrl = normalizeLinkedinUrl(linkedinUrl);
+
+      // Check if person already exists
+      const existingPerson = await Promisify<Person | null>(
+        this.personRepoService.get(
+          { where: { LinkedinUrl: normalizedUrl } },
+          false,
+        ),
+      );
+
+      if (existingPerson) {
+        this.logger.info(
+          `PersonService.getOrCreateByLinkedinUrl - Found existing person [personId=${existingPerson.PersonID}, linkedinUrl=${normalizedUrl}]`,
+        );
+        return { error: null, data: existingPerson };
+      }
+
+      // Validate createdByUser exists
+      await Promisify(
+        this.userRepoService.get({ where: { UserID: createdByUserId } }, true),
+      );
+
+      // Create new person
+      const personData = {
+        LinkedinUrl: normalizedUrl,
+        PrimaryDisplayName: primaryDisplayName || null,
+        Status: EntityStatus.ACTIVE,
+        CreatedByUserID: createdByUserId,
+      };
+
+      const person = await Promisify<Person>(
+        this.personRepoService.create(personData),
+      );
+
+      this.logger.info(
+        `PersonService.getOrCreateByLinkedinUrl - Created new person [personId=${person.PersonID}, linkedinUrl=${normalizedUrl}]`,
+      );
+      return { error: null, data: person };
+    } catch (error) {
+      this.logger.error(
+        `PersonService.getOrCreateByLinkedinUrl error [error=${error.message}, linkedinUrl=${linkedinUrl}]`,
+      );
+      return { error: error, data: null };
+    }
+  }
+
+  /**
+   * Get a Person by their LinkedIn URL.
+   *
+   * @param linkedinUrl - The LinkedIn profile URL to search for
+   */
+  async getPersonByLinkedinUrl(linkedinUrl: string): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `PersonService.getPersonByLinkedinUrl called [linkedinUrl=${linkedinUrl}]`,
+      );
+
+      // Normalize the LinkedIn URL
+      const normalizedUrl = normalizeLinkedinUrl(linkedinUrl);
+
+      const person = await Promisify<Person>(
+        this.personRepoService.get(
+          { where: { LinkedinUrl: normalizedUrl } },
+          true,
+        ),
+      );
+
+      this.logger.info(
+        `PersonService.getPersonByLinkedinUrl success [personId=${person.PersonID}]`,
+      );
+      return { error: null, data: person };
+    } catch (error) {
+      this.logger.error(
+        `PersonService.getPersonByLinkedinUrl error [error=${error.message}, linkedinUrl=${linkedinUrl}]`,
       );
       return { error: error, data: null };
     }
