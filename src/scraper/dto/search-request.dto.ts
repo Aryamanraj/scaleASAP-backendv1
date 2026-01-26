@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsObject, IsOptional, IsNumber, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsObject,
+  IsOptional,
+  IsNumber,
+  Min,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { SCRAPER_PROVIDER } from '../../common/types/scraper.types';
 
@@ -56,4 +63,14 @@ export class SearchRequestDto {
   @IsNumber()
   @Min(1)
   pageSizeOverride?: number;
+
+  @ApiProperty({
+    description:
+      'Fetch detailed profile data for each result (skills, education, work history)',
+    required: false,
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  enrichProfiles?: boolean;
 }

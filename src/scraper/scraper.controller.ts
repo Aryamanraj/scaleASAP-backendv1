@@ -87,6 +87,7 @@ export class ScraperController {
           maxPages: dto.maxPages,
           maxItems: dto.maxItems,
           pageSizeOverride: dto.pageSizeOverride,
+          enrichProfiles: dto.enrichProfiles,
         },
       };
 

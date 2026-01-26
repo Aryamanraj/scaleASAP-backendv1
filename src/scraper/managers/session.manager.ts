@@ -9,6 +9,7 @@ import { dirname } from 'path';
 import { Logger } from 'winston';
 import { CookieJar, Cookie } from 'tough-cookie';
 import { ResultWithError } from '../../common/interfaces';
+import { Promisify } from '../../common/helpers/promisifier';
 
 export class SessionManager {
   private jar: CookieJar;
@@ -99,10 +100,8 @@ export class SessionManager {
           await this.jar.setCookie(cookie, url);
         }
       }
-      const saveResult = await this.save();
-      if (saveResult.error) {
-        return saveResult;
-      }
+      // Use Promisify to unwrap save() - errors propagate via exception
+      await Promisify<boolean>(this.save());
       return { error: null, data: true };
     } catch (err: any) {
       this.logger.error(
@@ -118,10 +117,8 @@ export class SessionManager {
   async clear(): Promise<ResultWithError> {
     try {
       this.jar = new CookieJar();
-      const saveResult = await this.save();
-      if (saveResult.error) {
-        return saveResult;
-      }
+      // Use Promisify to unwrap save() - errors propagate via exception
+      await Promisify<boolean>(this.save());
       this.logger.info('SessionManager.clear: Session cleared');
       return { error: null, data: true };
     } catch (err: any) {

@@ -152,6 +152,18 @@ interface SearchApiResponse {
   body: SearchApiResponseBody;
 }
 
+/**
+ * Profile API response structure from GET /svc/app/prospect/profile
+ */
+interface ProfileApiResponse {
+  status: number;
+  data: {
+    profile: any; // Contains skills, education, position_groups, certifications, languages
+    prospect: any; // Prospect summary data
+    preview: any; // Preview data
+  };
+}
+
 @Injectable()
 export class ProspectProvider implements ScraperProvider {
   private http: HttpManager;
@@ -238,6 +250,64 @@ export class ProspectProvider implements ScraperProvider {
   }
 
   /**
+   * Get profile details for a prospect
+   */
+  async getProfile(profileCode: string): Promise<ResultWithError> {
+    try {
+      this.logger.debug(
+        `ProspectProvider.getProfile: Fetching profile [profileCode=${profileCode}]`,
+      );
+
+      const response = await Promisify<ProfileApiResponse>(
+        this.http.get<ProfileApiResponse>(
+          `${SCRAPER_CONFIG.PROFILE_PATH}?profile_code=${profileCode}`,
+        ),
+      );
+
+      return { error: null, data: response };
+    } catch (error) {
+      this.logger.error(
+        `ProspectProvider.getProfile: Error fetching profile - ${error.stack}`,
+      );
+      return { error: error, data: null };
+    }
+  }
+
+  /**
+   * Enrich a single item with profile data
+   */
+  private async enrichItem(item: any): Promise<any> {
+    try {
+      const profileCode = item.profile_code;
+      if (!profileCode) {
+        this.logger.warn(
+          `ProspectProvider.enrichItem: Item missing profile_code, skipping enrichment [id=${item.id}]`,
+        );
+        return item;
+      }
+
+      const profileResult = await this.getProfile(profileCode);
+      if (profileResult.error || !profileResult.data) {
+        this.logger.warn(
+          `ProspectProvider.enrichItem: Failed to fetch profile, returning original item [profileCode=${profileCode}, error=${profileResult.error?.message}]`,
+        );
+        return item;
+      }
+
+      // Add enriched data to the item
+      return {
+        ...item,
+        enriched: profileResult.data.data,
+      };
+    } catch (error) {
+      this.logger.error(
+        `ProspectProvider.enrichItem: Error enriching item - ${error.stack}`,
+      );
+      return item; // Return original item on error
+    }
+  }
+
+  /**
    * Execute a generic scraper request
    */
   async scrape(request: ScraperRequest): Promise<ResultWithError> {
@@ -270,10 +340,11 @@ export class ProspectProvider implements ScraperProvider {
         maxPages = Infinity,
         maxItems = Infinity,
         pageSizeOverride,
+        enrichProfiles = false,
       } = options;
 
       this.logger.info(
-        `ProspectProvider.search: Starting search [maxPages=${maxPages}, maxItems=${maxItems}]`,
+        `ProspectProvider.search: Starting search [maxPages=${maxPages}, maxItems=${maxItems}, enrichProfiles=${enrichProfiles}]`,
       );
 
       // Apply page size override if provided
@@ -306,7 +377,18 @@ export class ProspectProvider implements ScraperProvider {
 
         // Add items up to maxItems limit
         const remainingSlots = maxItems - allItems.length;
-        const itemsToAdd = items.slice(0, remainingSlots);
+        let itemsToAdd = items.slice(0, remainingSlots);
+
+        // Enrich profiles if requested
+        if (enrichProfiles) {
+          this.logger.info(
+            `ProspectProvider.search: Enriching profiles [count=${itemsToAdd.length}]`,
+          );
+          itemsToAdd = await Promise.all(
+            itemsToAdd.map((item) => this.enrichItem(item)),
+          );
+        }
+
         allItems.push(...itemsToAdd);
 
         pagesFetched++;
