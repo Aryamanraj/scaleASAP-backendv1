@@ -84,7 +84,7 @@ export class UserController {
 
     try {
       const users = await Promisify<User[]>(
-        this.userService.listUsers(query.companyId),
+        this.userService.listUsers(query.clientId),
       );
       resData = users;
     } catch (error) {

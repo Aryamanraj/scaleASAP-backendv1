@@ -14,12 +14,12 @@ import {
 
 export class CreateUserDto {
   @ApiProperty({
-    description: 'Company ID',
+    description: 'Client ID',
     example: 1,
   })
   @IsNotEmpty()
   @IsNumber()
-  companyId: number;
+  clientId: number;
 
   @ApiProperty({
     description: 'User email address',

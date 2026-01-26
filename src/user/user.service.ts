@@ -3,12 +3,12 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { ResultWithError } from '../common/interfaces';
 import { Promisify } from '../common/helpers/promisifier';
-import { CompanyRepoService } from '../repo/company-repo.service';
+import { ClientRepoService } from '../repo/client-repo.service';
 import { UserRepoService } from '../repo/user-repo.service';
 import { ProjectUserRepoService } from '../repo/project-user-repo.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Company } from '../repo/entities/company.entity';
+import { Client } from '../repo/entities/client.entity';
 import { User } from '../repo/entities/user.entity';
 import { ProjectUser } from '../repo/entities/project-user.entity';
 import { UserRole, EntityStatus } from '../common/constants/entity.constants';
@@ -17,7 +17,7 @@ import { UserRole, EntityStatus } from '../common/constants/entity.constants';
 export class UserService {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
-    private companyRepoService: CompanyRepoService,
+    private clientRepoService: ClientRepoService,
     private userRepoService: UserRepoService,
     private projectUserRepoService: ProjectUserRepoService,
   ) {}
@@ -25,20 +25,17 @@ export class UserService {
   async createUser(dto: CreateUserDto): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `UserService.createUser: Creating user with email=${dto.email}, companyId=${dto.companyId}`,
+        `UserService.createUser: Creating user with email=${dto.email}, clientId=${dto.clientId}`,
       );
 
-      // Ensure company exists
-      await Promisify<Company>(
-        this.companyRepoService.get(
-          { where: { CompanyID: dto.companyId } },
-          true,
-        ),
+      // Ensure client exists
+      await Promisify<Client>(
+        this.clientRepoService.get({ where: { ClientID: dto.clientId } }, true),
       );
 
       const user = await Promisify<User>(
         this.userRepoService.create({
-          CompanyID: dto.companyId,
+          ClientID: dto.clientId,
           Email: dto.email,
           Name: dto.name,
           PasswordHash: dto.passwordHash,
@@ -58,18 +55,18 @@ export class UserService {
     }
   }
 
-  async listUsers(companyId: number): Promise<ResultWithError> {
+  async listUsers(clientId: number): Promise<ResultWithError> {
     try {
       this.logger.info(
-        `UserService.listUsers: Fetching users for CompanyID=${companyId}`,
+        `UserService.listUsers: Fetching users for ClientID=${clientId}`,
       );
 
       const users = await Promisify<User[]>(
-        this.userRepoService.getAll({ where: { CompanyID: companyId } }, false),
+        this.userRepoService.getAll({ where: { ClientID: clientId } }, false),
       );
 
       this.logger.info(
-        `UserService.listUsers: Found ${users.length} users for CompanyID=${companyId}`,
+        `UserService.listUsers: Found ${users.length} users for ClientID=${clientId}`,
       );
 
       return { error: null, data: users };

@@ -4,11 +4,11 @@ import { IsNotEmpty, IsNumber } from 'class-validator';
 
 export class ListUsersQueryDto {
   @ApiProperty({
-    description: 'Company ID to filter users',
+    description: 'Client ID to filter users',
     example: 1,
   })
   @IsNotEmpty()
   @IsNumber()
   @Type(() => Number)
-  companyId: number;
+  clientId: number;
 }
