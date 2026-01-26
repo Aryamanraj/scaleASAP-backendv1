@@ -2,6 +2,7 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DBConfig } from './db.config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MigrationService } from './migration.service';
 
 @Module({})
 export class DBModule {
@@ -12,11 +13,20 @@ export class DBModule {
     let connectionOptions: TypeOrmModuleOptions =
       DBModule.getConnectionOptionsPostgres(configService);
 
+    // Determine synchronize behavior based on environment
+    // - 'development' with DB_SYNC=true: synchronize enabled (dangerous, use for quick prototyping only)
+    // - 'production': synchronize ALWAYS disabled, use migrations
+    // - 'test': synchronize enabled, dropSchema enabled
+    const nodeEnv = configService.get('NODE_ENV');
+    const dbSync = configService.get('DB_SYNC') === 'true';
+    const shouldSync =
+      nodeEnv === 'test' || (nodeEnv === 'development' && dbSync);
+
     connectionOptions = {
       ...connectionOptions,
-      synchronize: true,
+      synchronize: shouldSync,
       entities: dbConfig.entities,
-      dropSchema: configService.get('NODE_ENV') === 'test', // WARNING : DO NOT RUN IN PRODUCTION WITH ENV SET TO 'test'. IT WILL DELETE THE ENTIRE DB !!!!!
+      dropSchema: nodeEnv === 'test', // WARNING : DO NOT RUN IN PRODUCTION WITH ENV SET TO 'test'. IT WILL DELETE THE ENTIRE DB !!!!!
     };
     return connectionOptions;
   }
@@ -49,8 +59,8 @@ export class DBModule {
         }),
       ],
       controllers: [],
-      providers: [],
-      exports: [],
+      providers: [MigrationService],
+      exports: [MigrationService],
     };
   }
 }

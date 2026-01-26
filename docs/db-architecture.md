@@ -1,6 +1,13 @@
 # scaleASAP Database Architecture
 
-This document describes the current database schema for the scaleASAP NestJS backend. The architecture supports a modular data enrichment pipeline where raw data from external sources (LinkedIn, manual uploads) flows through connectors, normalizers, enrichers, and reducers to produce versioned claims about people. All tables use PascalCase column naming and `timestamp with time zone` for temporal fields.
+This document describes the current database schema for the scaleASAP NestJS backend. The architecture supports a modular data enrichment pipeline where raw data from external sources (LinkedIn, manual uploads) flows through connectors, normalizers, enrichers, and reducers to produce versioned claims about people.
+
+**Key Design Principles:**
+- **Global Person Identity**: Persons are uniquely identified by their LinkedIn URL across the entire database (not project-scoped). The same person can be associated with multiple projects via `PersonProjects`.
+- **Project Scoping via PersonProjects**: All project-person associations are defined exclusively through the `PersonProjects` junction table.
+- **Module Scope**: Modules operate at either `PERSON_LEVEL` (per-person analysis) or `PROJECT_LEVEL` (batch operations affecting the entire project).
+- **PascalCase Naming**: All tables use PascalCase column naming.
+- **UTC Timestamps**: All temporal fields use `timestamp with time zone` and store UTC values.
 
 ## Table of Contents
 
@@ -19,7 +26,6 @@ erDiagram
     Companies ||--o{ Users : "has"
     Companies ||--o{ Projects : "has"
     Users ||--o{ ProjectUsers : "assigned to"
-    Users ||--o{ Persons : "creates"
     Users ||--o{ PersonProjects : "creates"
     Users ||--o{ ModuleRuns : "triggers"
     Projects ||--o{ ProjectUsers : "has access"
@@ -30,7 +36,7 @@ erDiagram
     Projects ||--o{ ContentChunks : "groups"
     Projects ||--o{ Claims : "produces"
     Projects ||--o{ LayerSnapshots : "compiles"
-    Persons ||--o{ PersonProjects : "belongs to"
+    Persons ||--o{ PersonProjects : "associated via"
     Persons ||--o{ ModuleRuns : "analyzed by"
     Persons ||--o{ Documents : "data about"
     Persons ||--o{ PostItems : "authored"
@@ -40,12 +46,15 @@ erDiagram
     ModuleRuns ||--o{ Documents : "produces"
     ModuleRuns ||--o{ Claims : "generates"
     ModuleRuns ||--o{ LayerSnapshots : "creates"
+    ModuleRuns ||--o{ DiscoveryRunItems : "discovers"
     Documents ||--o{ PostItems : "normalized into"
     Documents ||--o{ Claims : "source of"
     PostItems ||--o{ ContentChunkItems : "grouped by"
     ContentChunks ||--o{ ContentChunkItems : "contains"
     ContentChunks ||--o| ChunkEvidences : "analyzed into"
     Claims ||--o{ Claims : "supersedes"
+    DiscoveryRunItems ||--o| Documents : "creates"
+    DiscoveryRunItems }o--|| Persons : "discovered"
 
     Companies {
         int CompanyID PK
@@ -78,6 +87,7 @@ erDiagram
 
     Persons {
         int PersonID PK
+        varchar LinkedinUrl UK "Global unique identifier"
         varchar PrimaryDisplayName
         enum Status
         bigint CreatedByUserID FK
@@ -97,7 +107,7 @@ erDiagram
     PersonProjects {
         int PersonProjectID PK
         bigint PersonID FK
-        bigint ProjectID FK
+        bigint ProjectID FK "UNIQUE(ProjectID,PersonID)"
         varchar Tag
         bigint CreatedByUserID FK
         timestamptz CreatedAt
@@ -108,6 +118,7 @@ erDiagram
         int ModuleID PK
         varchar ModuleKey
         enum ModuleType
+        enum Scope "PERSON_LEVEL or PROJECT_LEVEL"
         varchar Version
         jsonb ConfigSchemaJson
         boolean IsEnabled
@@ -118,7 +129,7 @@ erDiagram
     ModuleRuns {
         int ModuleRunID PK
         bigint ProjectID FK
-        bigint PersonID FK
+        bigint PersonID FK "nullable for PROJECT_LEVEL"
         bigint TriggeredByUserID FK
         varchar ModuleKey
         varchar ModuleVersion
@@ -134,7 +145,7 @@ erDiagram
     Documents {
         int DocumentID PK
         bigint ProjectID FK
-        bigint PersonID FK
+        bigint PersonID FK "nullable for project-level docs"
         varchar Source
         varchar SourceRef
         varchar ContentType
@@ -239,9 +250,24 @@ erDiagram
         timestamptz CreatedAt
         timestamptz UpdatedAt
     }
+
+    DiscoveryRunItems {
+        int DiscoveryRunItemID PK
+        bigint ModuleRunID FK
+        bigint ProjectID FK
+        bigint PersonID FK "nullable if failed"
+        varchar SourceRef "external ID"
+        bigint CreatedDocumentID FK "nullable if failed"
+        enum Status "CREATED or FAILED"
+        jsonb ErrorJson "nullable"
+        timestamptz CreatedAt
+        timestamptz UpdatedAt
+    }
 ```
 
 **Key Indexes:**
+- `Persons`: UNIQUE IDX_PERSON_LINKEDIN_URL on (LinkedinUrl) — **global unique identifier**
+- `PersonProjects`: UNIQUE UQ_PERSON_PROJECT on (ProjectID, PersonID) — **prevents duplicate associations**
 - `Documents`: IDX_DOCUMENT_LATEST_VALID on (ProjectID, PersonID, Source, DocumentKind, IsValid, CapturedAt)
 - `PostItems`: UNIQUE (ProjectID, PersonID, Fingerprint)
 - `ContentChunks`: UNIQUE (ProjectID, PersonID, Fingerprint)
@@ -250,6 +276,7 @@ erDiagram
 - `Projects`: Index on (CompanyID, Status)
 - `ModuleRuns`: Index on (ProjectID, PersonID, CreatedAt)
 - `Claims`: Index on (ProjectID, PersonID, ClaimType, GroupKey, CreatedAt)
+- `DiscoveryRunItems`: Index on (ModuleRunID, ProjectID) and (ProjectID, PersonID)
 
 ---
 
@@ -281,10 +308,24 @@ erDiagram
 **Used in**:
 - Module.ModuleType
 
+### ModuleScope
+**Values**: PERSON_LEVEL, PROJECT_LEVEL  
+**Used in**:
+- Module.Scope
+
+**Scope Semantics:**
+- **PERSON_LEVEL**: Module operates on a single person. ModuleRun requires PersonID and validates PersonProjects association.
+- **PROJECT_LEVEL**: Module operates at project level (batch operations). ModuleRun has PersonID = null.
+
 ### ModuleRunStatus
 **Values**: QUEUED, RUNNING, COMPLETED, FAILED, CANCELLED  
 **Used in**:
 - ModuleRun.Status
+
+### DiscoveryRunItemStatus
+**Values**: CREATED, FAILED  
+**Used in**:
+- DiscoveryRunItem.Status
 
 ### DATA_SOURCE
 **Values**: LINKEDIN, X, TWITTER, GITHUB, BLOG, OTHER  
@@ -339,14 +380,20 @@ erDiagram
 - Claim.ClaimType
 
 ### DocumentSource
-**Values**: MANUAL, LINKEDIN, RESUME, GITHUB, WEB  
+**Values**: MANUAL, LINKEDIN, PROSPECT, RESUME, GITHUB, WEB  
 **Used in**:
 - Document.Source (as string, not enforced enum in entity)
 
 ### DocumentKind
-**Values**: linkedin_profile, linkedin_posts  
+**Values**: linkedin_profile, linkedin_posts, prospect_search_results, prospect_person_snapshot  
 **Used in**:
 - Document.DocumentKind (as string, not enforced enum in entity)
+
+**DocumentKind Semantics:**
+- `linkedin_profile`: LinkedIn profile data (person-level)
+- `linkedin_posts`: LinkedIn posts data (person-level)
+- `prospect_search_results`: Batch search results from Prospect.io (project-level, PersonID=null)
+- `prospect_person_snapshot`: Per-person data extracted from prospect search (person-level)
 
 ---
 
@@ -354,8 +401,23 @@ erDiagram
 
 The scaleASAP system implements a modular data enrichment pipeline with the following stages:
 
+### 0. Person & Project Setup (Pre-requisite)
+- **Person is Global**: A Person is uniquely identified by their `LinkedinUrl` across all projects
+- **Get-or-Create Pattern**: When adding a person, use `getOrCreateByLinkedinUrl(linkedinUrl, userId, displayName?)`
+  - If a Person with that normalized LinkedIn URL exists → return existing Person
+  - Otherwise → create new Person record
+- **Project Association**: Add Person to Project via `PersonProjects`:
+  - `PersonProjects(ProjectID, PersonID)` has UNIQUE constraint
+  - Same person cannot be added twice to the same project
+- **Validation**: Creating a PERSON_LEVEL ModuleRun requires the Person to be associated with the Project via PersonProjects
+
 ### 1. Module Run Initialization
 - User creates a ModuleRun via API (protected by AdminAuthGuard)
+- **Two API paths based on Module.Scope**:
+  - `POST /projects/:projectId/persons/:personId/runs` — PERSON_LEVEL modules
+  - `POST /projects/:projectId/modules/run` — PROJECT_LEVEL modules
+- **PERSON_LEVEL Validation**: Person must be associated with Project via PersonProjects
+- **PROJECT_LEVEL Validation**: Module.Scope must be PROJECT_LEVEL; PersonID is set to null
 - ModuleRun is inserted with Status=QUEUED, assigned to a Project + Person
 - ModuleRun.InputConfigJson contains module-specific parameters
 
@@ -366,7 +428,7 @@ The scaleASAP system implements a modular data enrichment pipeline with the foll
 - StartedAt and FinishedAt timestamps track execution
 
 ### 3. Connector Phase (ModuleType=CONNECTOR)
-- Connectors fetch raw data from external sources (LinkedIn, manual uploads)
+- Connectors fetch raw data from external sources (LinkedIn, manual uploads, Prospect.io)
 - Data is stored in Documents table with:
   - IsValid=true for active version
   - CapturedAt timestamp for ordering
@@ -374,6 +436,37 @@ The scaleASAP system implements a modular data enrichment pipeline with the foll
   - Hash for deduplication
 - When newer data arrives, old document gets IsValid=false
 - Query for latest valid: `WHERE IsValid=true ORDER BY CapturedAt DESC`
+
+**Connector Scope Variations:**
+- **PERSON_LEVEL connectors** (e.g., linkedin-profile-connector): Store Documents with PersonID set
+- **PROJECT_LEVEL connectors** (e.g., prospect-search-connector): Store Documents with PersonID=null
+
+### 3a. Prospect Search Flow (PROJECT_LEVEL)
+This is a specialized connector flow for batch prospect discovery:
+
+1. **Run PROJECT_LEVEL Module**: `POST /projects/:projectId/modules/run`
+   - ModuleKey: `prospect-search-connector`
+   - InputConfigJson: search filters, maxPages, maxItems
+
+2. **Store Batch Results**: Creates one Document:
+   - DocumentKind: `prospect_search_results`
+   - PersonID: null (project-level)
+   - PayloadJson: full search response with all items
+
+3. **Fan-out Phase** (ProspectFanoutService):
+   - Parse `prospect_search_results` document
+   - For each item with valid LinkedIn URL:
+     - Get-or-create Person by LinkedIn URL (globally unique)
+     - Ensure PersonProjects association (idempotent)
+     - Create per-person Document (DocumentKind: `prospect_person_snapshot`)
+     - Create DiscoveryRunItem for lineage tracking
+   - Handle partial failures (one failure doesn't abort entire batch)
+
+4. **Lineage Tracking** (DiscoveryRunItems):
+   - One row per processed prospect
+   - Status: CREATED (success) or FAILED (error)
+   - ErrorJson captures failure details
+   - Links ModuleRunID → PersonID → CreatedDocumentID
 
 ### 4. Normalizer Phase
 - Normalizers parse Documents and extract structured items
