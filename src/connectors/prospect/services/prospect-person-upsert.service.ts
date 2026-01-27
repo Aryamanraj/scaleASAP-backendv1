@@ -191,10 +191,16 @@ export class ProspectPersonUpsertService {
         FoundedYear: mappedCompany.foundedYear,
         Type: mappedCompany.type,
         InferredRevenue: truncateString(mappedCompany.inferredRevenue, 128),
-        TotalFundingRaised: truncateString(mappedCompany.totalFundingRaised, 128),
+        TotalFundingRaised: truncateString(
+          mappedCompany.totalFundingRaised,
+          128,
+        ),
         LinkedinUrl: truncateString(mappedCompany.linkedinUrl, 512),
         LinkedinCompanyId: truncateString(mappedCompany.linkedinCompanyId, 64),
-        LinkedinCompanyUrn: truncateString(mappedCompany.linkedinCompanyUrn, 128),
+        LinkedinCompanyUrn: truncateString(
+          mappedCompany.linkedinCompanyUrn,
+          128,
+        ),
         LocationID: companyLocation?.LocationID || null,
       };
 
