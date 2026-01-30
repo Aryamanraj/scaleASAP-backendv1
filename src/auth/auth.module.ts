@@ -7,6 +7,7 @@ import { LoggerMiddleware } from '../common/middlewares/logger.middleware';
 import { AdminAuthGuard } from './guards/admin-auth.guard';
 import { UserAuthGuard } from './guards/user-auth.guard';
 import { CompositeAuthGuard } from './guards/composite-auth.guard';
+import { SupabaseAuthGuard } from './guards/supabase-auth.guard';
 
 @Module({
   imports: [
@@ -23,9 +24,19 @@ import { CompositeAuthGuard } from './guards/composite-auth.guard';
       inject: [ConfigService],
     }),
   ],
-  providers: [AdminAuthGuard, UserAuthGuard, CompositeAuthGuard],
+  providers: [
+    AdminAuthGuard,
+    UserAuthGuard,
+    CompositeAuthGuard,
+    SupabaseAuthGuard,
+  ],
   controllers: [],
-  exports: [AdminAuthGuard, UserAuthGuard, CompositeAuthGuard],
+  exports: [
+    AdminAuthGuard,
+    UserAuthGuard,
+    CompositeAuthGuard,
+    SupabaseAuthGuard,
+  ],
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
