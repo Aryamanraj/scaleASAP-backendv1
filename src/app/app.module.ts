@@ -18,6 +18,13 @@ import { ModuleRunnerModule } from '../module-runner/module-runner.module';
 import { InsightsModule } from '../insights/insights.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { ScraperModule } from '../scraper/scraper.module';
+// New workspace/campaign modules
+import { WorkspaceModule } from '../workspace/workspace.module';
+import { ExperimentModule } from '../experiment/experiment.module';
+import { CampaignModule } from '../campaign/campaign.module';
+import { LeadModule } from '../lead/lead.module';
+import { AsyncJobModule } from '../async-job/async-job.module';
+import { OnboardingModule } from '../onboarding/onboarding.module';
 
 @Module({
   imports: [
@@ -76,6 +83,13 @@ import { ScraperModule } from '../scraper/scraper.module';
     InsightsModule,
     DocumentsModule,
     ScraperModule,
+    // New workspace/campaign modules
+    WorkspaceModule,
+    ExperimentModule,
+    CampaignModule,
+    LeadModule,
+    AsyncJobModule,
+    OnboardingModule,
   ],
   controllers: [],
   providers: [],
