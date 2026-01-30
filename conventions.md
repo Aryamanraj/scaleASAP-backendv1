@@ -430,6 +430,37 @@ Repository services act as a data access layer between business logic and the da
    );
    ```
 
+6. **Relations Loading**: When loading related entities, use TypeORM's object syntax (NOT array syntax):
+   ```typescript
+   // ✅ CORRECT - Object syntax for relations
+   const result = await Promisify<ProjectUser[]>(
+     this.projectUserRepo.getAll({
+       where: { UserID: userId },
+       relations: { Project: true, User: true },
+     }),
+   );
+
+   // ❌ FORBIDDEN - Array syntax is deprecated
+   const result = await this.repo.getAll({
+     where: { UserID: userId },
+     relations: ['Project', 'User'],  // Don't use this!
+   });
+   ```
+   
+   For nested relations:
+   ```typescript
+   // ✅ CORRECT - Nested object syntax
+   relations: {
+     Project: {
+       Client: true,
+     },
+     User: true,
+   }
+
+   // ❌ FORBIDDEN - Dot notation in array
+   relations: ['Project.Client', 'User']
+   ```
+
 ---
 
 ## API Conventions
