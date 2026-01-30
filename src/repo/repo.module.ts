@@ -18,6 +18,16 @@ import { ChunkEvidence } from './entities/chunk-evidence.entity';
 import { DiscoveryRunItem } from './entities/discovery-run-item.entity';
 import { Location } from './entities/location.entity';
 import { Organization } from './entities/organization.entity';
+// New workspace/campaign entities
+import { OnboardingData } from './entities/onboarding-data.entity';
+import { Experiment } from './entities/experiment.entity';
+import { Campaign } from './entities/campaign.entity';
+import { CampaignActivity } from './entities/campaign-activity.entity';
+import { Lead } from './entities/lead.entity';
+import { LeadSignal } from './entities/lead-signal.entity';
+import { OutreachMessage } from './entities/outreach-message.entity';
+import { DiscoverySession } from './entities/discovery-session.entity';
+import { DiscoveryFeedback } from './entities/discovery-feedback.entity';
 import { ClientRepoService } from './client-repo.service';
 import { ProjectRepoService } from './project-repo.service';
 import { UserRepoService } from './user-repo.service';
@@ -36,6 +46,16 @@ import { ChunkEvidenceRepoService } from './chunk-evidence-repo.service';
 import { DiscoveryRunItemRepoService } from './discovery-run-item-repo.service';
 import { LocationRepoService } from './location-repo.service';
 import { OrganizationRepoService } from './organization-repo.service';
+// New workspace/campaign repo services
+import { OnboardingDataRepoService } from './onboarding-data-repo.service';
+import { ExperimentRepoService } from './experiment-repo.service';
+import { CampaignRepoService } from './campaign-repo.service';
+import { CampaignActivityRepoService } from './campaign-activity-repo.service';
+import { LeadRepoService } from './lead-repo.service';
+import { LeadSignalRepoService } from './lead-signal-repo.service';
+import { OutreachMessageRepoService } from './outreach-message-repo.service';
+import { DiscoverySessionRepoService } from './discovery-session-repo.service';
+import { DiscoveryFeedbackRepoService } from './discovery-feedback-repo.service';
 
 export const entities = [
   Client,
@@ -56,6 +76,16 @@ export const entities = [
   DiscoveryRunItem,
   Location,
   Organization,
+  // New workspace/campaign entities
+  OnboardingData,
+  Experiment,
+  Campaign,
+  CampaignActivity,
+  Lead,
+  LeadSignal,
+  OutreachMessage,
+  DiscoverySession,
+  DiscoveryFeedback,
 ];
 
 export const repoServices = [
@@ -77,6 +107,16 @@ export const repoServices = [
   DiscoveryRunItemRepoService,
   LocationRepoService,
   OrganizationRepoService,
+  // New workspace/campaign repo services
+  OnboardingDataRepoService,
+  ExperimentRepoService,
+  CampaignRepoService,
+  CampaignActivityRepoService,
+  LeadRepoService,
+  LeadSignalRepoService,
+  OutreachMessageRepoService,
+  DiscoverySessionRepoService,
+  DiscoveryFeedbackRepoService,
 ];
 
 @Module({
