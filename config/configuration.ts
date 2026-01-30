@@ -14,6 +14,22 @@ export default () => {
     ADMIN_API_KEY: process.env.ADMIN_API_KEY,
     JWT_SECRET: process.env.JWT_SECRET || 'default-secret-change-in-production',
     APIFY_TOKEN: process.env.APIFY_TOKEN,
+    // AI Provider Configuration
+    ai: {
+      openai: {
+        apiKey: process.env.OPENAI_API_KEY,
+        model: process.env.OPENAI_MODEL || 'gpt-4o',
+      },
+      gemini: {
+        apiKey: process.env.GEMINI_API_KEY,
+        model: process.env.GEMINI_MODEL || 'gemini-1.5-pro',
+      },
+    },
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    // Supabase configuration for frontend-v1 auth integration
+    supabase: {
+      jwtSecret: process.env.SUPABASE_JWT_SECRET,
+      url: process.env.SUPABASE_URL,
+    },
   };
 };
