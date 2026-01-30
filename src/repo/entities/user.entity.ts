@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Client } from './client.entity';
@@ -24,6 +25,13 @@ export class User extends BaseEntity {
   @ApiProperty()
   @Column({ type: 'bigint', nullable: false })
   ClientID: number;
+
+  @ApiProperty({
+    description: 'Supabase user ID (UUID) for frontend-v1 auth integration',
+  })
+  @Column({ length: 255, unique: true, nullable: true })
+  @Index('IDX_USER_SUPABASE_ID')
+  SupabaseUserID: string;
 
   @ApiProperty()
   @Column({ length: 255, unique: true, nullable: false })
