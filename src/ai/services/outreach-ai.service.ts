@@ -18,6 +18,14 @@ export interface OutreachResult {
   followUpDm?: string;
   personalizationAngle?: string;
   alternative?: string;
+  thinking?: OutreachThinking;
+}
+
+export interface OutreachThinking {
+  whatIKnowAboutThem?: string;
+  whatTheyMightCareAbout?: string;
+  whyThisApproach?: string;
+  risks?: string;
 }
 
 export interface LeadContext {
@@ -285,6 +293,112 @@ Return a JSON object with:
         peakTime: 'Unknown',
         summary: 'Error analyzing activity.',
       };
+    }
+  }
+
+  /**
+   * Generate custom outreach with specific platform and message type constraints.
+   * Matches frontend-v1/lib/content-engine/service.ts generateCustomOutreach pattern.
+   */
+  async generateCustomOutreach(
+    sender: SenderContext,
+    lead: LeadContext,
+    platform: 'linkedin' | 'email',
+    messageType: string,
+    userContext?: string,
+    experimentContext?: ExperimentContext,
+  ): Promise<OutreachResult> {
+    try {
+      this.logger.info(
+        `OutreachAIService.generateCustomOutreach: Generating for lead [name=${lead.name}, platform=${platform}, type=${messageType}]`,
+      );
+
+      if (!this.openai) {
+        throw new Error('OpenAI client not initialized - API key missing');
+      }
+
+      // Analyze activity first
+      const activityAnalysis = await this.analyzeLinkedInActivity(
+        lead.linkedInActivity?.join('\n') || '',
+        sender,
+      );
+
+      // Build custom user prompt with platform/type constraints
+      const basePrompt = getOutreachUserPrompt({
+        senderCompany: sender.companyName,
+        senderProduct: sender.productDescription,
+        senderValueProp: sender.valueProposition,
+        leadName: lead.name,
+        leadTitle: lead.title,
+        leadCompany: lead.company,
+        leadIndustry: lead.industry,
+        linkedInActivity: lead.linkedInActivity,
+        recentPosts: lead.recentPosts,
+        experimentContext,
+      });
+
+      const customConstraints = `
+CUSTOM CONSTRAINTS:
+- Platform: ${platform}
+- Message Type: ${messageType}
+${
+  userContext ? `- Additional Context (e.g. user response): ${userContext}` : ''
+}
+
+Please generate a message that explicitly respects these custom constraints.
+The message should be optimized for the ${platform} platform and be a ${messageType}.
+If the platform is 'email', ignore LinkedIn-specific constraints like character limits for connection requests, but keep the concise, conversation-first mindset.
+If additional context or user response is provided, ensure the message incorporates or addresses it naturally.
+
+Activity Analysis:
+- Is Active: ${activityAnalysis.isActive}
+- Peak Time: ${activityAnalysis.peakTime}
+- Summary: ${activityAnalysis.summary}
+${
+  activityAnalysis.suggestedAngle
+    ? `- Suggested Angle: ${activityAnalysis.suggestedAngle}`
+    : ''
+}
+`;
+
+      const model =
+        this.configService.get<string>('ai.openai.model') || 'gpt-4o';
+
+      const completion = await this.openai.chat.completions.create({
+        model,
+        messages: [
+          { role: 'system', content: OUTREACH_SYSTEM_PROMPT },
+          { role: 'user', content: basePrompt + customConstraints },
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+        response_format: { type: 'json_object' },
+      });
+
+      const rawResponse = completion.choices[0]?.message?.content || '{}';
+
+      this.logger.info(
+        `OutreachAIService.generateCustomOutreach: Received response [tokensUsed=${completion.usage?.total_tokens}]`,
+      );
+
+      try {
+        const result = JSON.parse(rawResponse) as OutreachResult;
+        return result;
+      } catch (parseError) {
+        this.logger.error(
+          `OutreachAIService.generateCustomOutreach: Failed to parse JSON response`,
+        );
+        return {
+          shouldReachOut: false,
+          reason:
+            'Failed to generate outreach - AI response was not valid JSON',
+        };
+      }
+    } catch (error) {
+      this.logger.error(
+        `OutreachAIService.generateCustomOutreach: Error - ${error.stack}`,
+      );
+      throw error;
     }
   }
 }

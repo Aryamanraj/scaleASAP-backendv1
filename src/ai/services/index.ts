@@ -14,3 +14,8 @@ export {
   SenderContext,
   ExperimentContext,
 } from './outreach-ai.service';
+export {
+  WorldviewAIService,
+  WorldviewGenerationRequest,
+  WorldviewGenerationResult,
+} from './worldview-ai.service';
