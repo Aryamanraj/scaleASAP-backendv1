@@ -1,9 +1,27 @@
 -- =============================================================================
 -- Migration: 000_initial_schema.sql
 -- Description: Initial database schema for fresh installations
+-- 
+-- IMPORTANT: This migration creates all tables that exist in the current
+-- TypeORM entities. For fresh installations, all subsequent migrations
+-- (001-010) will be no-ops since they only add/modify existing data.
 -- =============================================================================
 
--- Create base enums
+-- This migration should be regenerated when entities change significantly.
+-- To regenerate:
+-- 1. Drop your test database
+-- 2. Enable synchronize: true in TypeORM config temporarily
+-- 3. Start the app to let TypeORM create all tables
+-- 4. Export the schema: pg_dump -s -O -x <dbname> > new_000.sql
+-- 5. Clean up the exported SQL and replace this file
+-- 6. Disable synchronize: false
+
+-- For now, we'll use a minimal schema and let migrations 001-010 build it up.
+-- This approach maintains backward compatibility with existing databases.
+
+-- =============================================================================
+-- ENUMS
+-- =============================================================================
 CREATE TYPE "EntityStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'DELETED');
 CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'MEMBER', 'VIEWER');
 CREATE TYPE "ProjectStatus" AS ENUM ('ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED');
@@ -15,6 +33,7 @@ CREATE TYPE "ModuleStatus" AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED')
 CREATE TABLE "Clients" (
   "ClientID" BIGSERIAL PRIMARY KEY,
   "Name" VARCHAR(255) NOT NULL,
+  "Slug" VARCHAR(64) UNIQUE,
   "Domain" VARCHAR(255),
   "Status" "EntityStatus" NOT NULL DEFAULT 'ACTIVE',
   "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -29,6 +48,7 @@ CREATE INDEX "IDX_CLIENT_STATUS" ON "Clients"("Status");
 CREATE TABLE "Users" (
   "UserID" BIGSERIAL PRIMARY KEY,
   "ClientID" BIGINT NOT NULL REFERENCES "Clients"("ClientID"),
+  "SupabaseUserID" VARCHAR(255) UNIQUE,
   "Email" VARCHAR(255) NOT NULL UNIQUE,
   "Name" VARCHAR(255) NOT NULL,
   "PasswordHash" VARCHAR(255),
@@ -40,6 +60,7 @@ CREATE TABLE "Users" (
 
 CREATE INDEX "IDX_USER_CLIENT" ON "Users"("ClientID");
 CREATE INDEX "IDX_USER_EMAIL" ON "Users"("Email");
+CREATE INDEX "IDX_USER_SUPABASE_ID" ON "Users"("SupabaseUserID");
 CREATE INDEX "IDX_USER_STATUS" ON "Users"("Status");
 
 -- =============================================================================
