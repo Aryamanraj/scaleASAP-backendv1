@@ -28,10 +28,26 @@ const dataSource = new DataSource({
   password: 'postgres',
   database: 'temp_schema_gen',
   entities: [
-    Client, User, Project, Module, ModuleRun, Person, PersonProject, Document,
-    Location, Organization, Lead, LeadSignal, Campaign, CampaignActivity,
-    OutreachMessage, Experiment, DiscoverySession, DiscoveryFeedback,
-    OnboardingData, GeneratedMessage
+    Client,
+    User,
+    Project,
+    Module,
+    ModuleRun,
+    Person,
+    PersonProject,
+    Document,
+    Location,
+    Organization,
+    Lead,
+    LeadSignal,
+    Campaign,
+    CampaignActivity,
+    OutreachMessage,
+    Experiment,
+    DiscoverySession,
+    DiscoveryFeedback,
+    OnboardingData,
+    GeneratedMessage,
   ],
   synchronize: false,
   logging: false,
@@ -40,9 +56,15 @@ const dataSource = new DataSource({
 async function generateSchema() {
   await dataSource.initialize();
   const queryRunner = dataSource.createQueryRunner();
-  const upQueries = await queryRunner.createSchema(true);
-  console.log('-- Auto-generated schema from TypeORM entities');
-  console.log(upQueries);
+
+  // Get the SQL queries that would create the schema
+  const sqlInMemory = await dataSource.driver.createSchemaBuilder().log();
+
+  console.log('-- Auto-generated schema from TypeORM entities\n');
+  for (const query of sqlInMemory.upQueries) {
+    console.log(query.query + ';');
+  }
+
   await queryRunner.release();
   await dataSource.destroy();
 }
