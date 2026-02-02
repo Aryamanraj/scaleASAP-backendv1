@@ -56,6 +56,8 @@ import { LeadSignalRepoService } from './lead-signal-repo.service';
 import { OutreachMessageRepoService } from './outreach-message-repo.service';
 import { DiscoverySessionRepoService } from './discovery-session-repo.service';
 import { DiscoveryFeedbackRepoService } from './discovery-feedback-repo.service';
+import { GeneratedMessage } from './entities/generated-message.entity';
+import { GeneratedMessageRepoService } from './generated-message-repo.service';
 
 export const entities = [
   Client,
@@ -86,6 +88,7 @@ export const entities = [
   OutreachMessage,
   DiscoverySession,
   DiscoveryFeedback,
+  GeneratedMessage,
 ];
 
 export const repoServices = [
@@ -117,6 +120,7 @@ export const repoServices = [
   OutreachMessageRepoService,
   DiscoverySessionRepoService,
   DiscoveryFeedbackRepoService,
+  GeneratedMessageRepoService,
 ];
 
 @Module({
