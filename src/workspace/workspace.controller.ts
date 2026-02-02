@@ -30,11 +30,18 @@ import { ApiOkResponseGeneric } from '../common/decorators/apiOkResponse.decorat
 import { makeResponse } from '../common/helpers/reponseMaker';
 import { Promisify } from '../common/helpers/promisifier';
 import { WorkspaceService } from './workspace.service';
+import { WorldviewAIService } from '../ai/services/worldview-ai.service';
+import { DiscoveryAIService } from '../ai/services/discovery-ai.service';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { UpdateDiscoveryChatDto } from './dto/update-discovery-chat.dto';
 import { CreateDiscoveryFeedbackDto } from './dto/create-discovery-feedback.dto';
+import { DiscoveryChatDto } from './dto/discovery-chat.dto';
+import {
+  GenerateWorldviewDto,
+  WorldviewResponseDto,
+} from './dto/generate-worldview.dto';
 import {
   WorkspaceResponseDto,
   WorkspaceMemberDto,
@@ -47,7 +54,11 @@ import {
 @UseGuards(SupabaseAuthGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class WorkspaceController {
-  constructor(private workspaceService: WorkspaceService) {}
+  constructor(
+    private workspaceService: WorkspaceService,
+    private worldviewAIService: WorldviewAIService,
+    private discoveryAIService: DiscoveryAIService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all workspaces for the current user' })
@@ -417,5 +428,142 @@ export class WorkspaceController {
     }
 
     makeResponse(res, resStatus, resSuccess, resMessage, resData);
+  }
+
+  @Post(':id/worldview/generate')
+  @UseGuards(WorkspaceAccessGuard)
+  @ApiOperation({ summary: 'Generate worldview document from onboarding data' })
+  @ApiParam({ name: 'id', description: 'Workspace ID' })
+  @ApiOkResponseGeneric({
+    type: WorldviewResponseDto,
+    description: 'Worldview generated successfully',
+  })
+  async generateWorldview(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: GenerateWorldviewDto,
+    @Res() res: Response,
+  ) {
+    let resStatus = HttpStatus.OK;
+    let resMessage = 'Worldview generated successfully';
+    let resData = null;
+    let resSuccess = true;
+
+    try {
+      const result = await this.worldviewAIService.generateWorldview({
+        onboardingData: dto.onboardingData,
+        websiteScrape: dto.websiteScrape,
+      });
+      resData = result;
+    } catch (error) {
+      resStatus = error?.status
+        ? error.status
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+      resMessage = `Failed to generate worldview: ${
+        error?.message ?? 'Unknown error'
+      }`;
+      resSuccess = false;
+    }
+
+    makeResponse(res, resStatus, resSuccess, resMessage, resData);
+  }
+
+  @Post(':id/discovery/chat')
+  @UseGuards(WorkspaceAccessGuard)
+  @ApiOperation({ summary: 'Stream discovery chat response' })
+  @ApiParam({ name: 'id', description: 'Workspace ID' })
+  async discoveryChat(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: DiscoveryChatDto,
+    @Res() res: Response,
+  ) {
+    try {
+      // Get workspace data for context
+      const workspace = await Promisify<WorkspaceResponseDto>(
+        this.workspaceService.getWorkspaceById(id),
+      );
+
+      // Get onboarding data from workspace settings or separate storage
+      const onboardingData =
+        (workspace.settings as Record<string, unknown>) || {};
+
+      // Map previousExperiments to required format with defaults
+      const mappedExperiments = (dto.previousExperiments || []).map((exp) => ({
+        name: exp.name,
+        type: exp.type || 'unknown',
+        pattern: exp.pattern || '',
+        industries: exp.industries || [],
+        status: exp.status || 'active',
+      }));
+
+      // Build context for the AI
+      const context = {
+        userName: dto.userName || workspace.name || 'User',
+        companyName:
+          (onboardingData.companyName as string) ||
+          workspace.name ||
+          'the company',
+        worldview: (onboardingData.worldview_full as string) || '',
+        website: (onboardingData.website_scrape as string) || '',
+        turnCount: dto.messages?.length || 0,
+        isFollowUp: dto.isFollowUp || false,
+        previousExperiments: mappedExperiments,
+      };
+
+      // Get the last user message
+      const userMessages = dto.messages.filter((m) => m.role === 'user');
+      const lastUserMessage =
+        userMessages[userMessages.length - 1]?.content ||
+        'Hi, I am ready to start the discovery process.';
+
+      // Set up SSE headers
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no');
+
+      // Stream the response
+      const stream = this.discoveryAIService.chatStream(
+        context,
+        dto.messages.slice(0, -1), // All messages except last
+        lastUserMessage,
+      );
+
+      let fullResponse = '';
+      let experiments = null;
+
+      for await (const chunk of stream) {
+        if (typeof chunk === 'string') {
+          fullResponse += chunk;
+          res.write(
+            `data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`,
+          );
+        }
+      }
+
+      // Parse experiments from response
+      const { parseExperimentsFromResponse } = await import(
+        '../ai/prompts/discovery/orchestrator'
+      );
+      experiments = parseExperimentsFromResponse(fullResponse);
+
+      // Send completion event with experiments if found
+      res.write(
+        `data: ${JSON.stringify({
+          type: 'done',
+          experiments: experiments || null,
+        })}\n\n`,
+      );
+
+      res.end();
+    } catch (error) {
+      // Send error via SSE
+      res.write(
+        `data: ${JSON.stringify({
+          type: 'error',
+          message: error?.message ?? 'Unknown error',
+        })}\n\n`,
+      );
+      res.end();
+    }
   }
 }
