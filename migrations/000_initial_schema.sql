@@ -158,17 +158,3 @@ CREATE INDEX "IDX_DOCUMENT_SOURCE" ON "Documents"("Source");
 CREATE INDEX "IDX_DOCUMENT_KIND" ON "Documents"("DocumentKind");
 CREATE INDEX "IDX_DOCUMENT_VALID" ON "Documents"("IsValid");
 CREATE INDEX "IDX_DOCUMENT_MODULE_RUN" ON "Documents"("ModuleRunID");
-
--- =============================================================================
--- Migrations Tracking Table
--- =============================================================================
-CREATE TABLE "Migrations" (
-  "MigrationID" BIGSERIAL PRIMARY KEY,
-  "FileName" VARCHAR(255) NOT NULL UNIQUE,
-  "AppliedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "ExecutionTimeMs" INTEGER,
-  "Success" BOOLEAN NOT NULL DEFAULT TRUE
-);
-
-CREATE INDEX "IDX_MIGRATION_FILENAME" ON "Migrations"("FileName");
-CREATE INDEX "IDX_MIGRATION_APPLIED" ON "Migrations"("AppliedAt");
