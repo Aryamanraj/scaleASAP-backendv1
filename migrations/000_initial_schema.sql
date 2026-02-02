@@ -22,15 +22,26 @@
 -- =============================================================================
 -- ENUMS
 -- =============================================================================
-CREATE TYPE "EntityStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'DELETED');
-CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'MEMBER', 'VIEWER');
-CREATE TYPE "ProjectStatus" AS ENUM ('ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED');
-CREATE TYPE "ModuleStatus" AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED');
+DO $$ BEGIN
+  CREATE TYPE "EntityStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'DELETED');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'MEMBER', 'VIEWER');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "ProjectStatus" AS ENUM ('ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "ModuleStatus" AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- =============================================================================
 -- Clients Table
 -- =============================================================================
-CREATE TABLE "Clients" (
+CREATE TABLE IF NOT EXISTS "Clients" (
   "ClientID" BIGSERIAL PRIMARY KEY,
   "Name" VARCHAR(255) NOT NULL,
   "Slug" VARCHAR(64) UNIQUE,
@@ -40,12 +51,12 @@ CREATE TABLE "Clients" (
   "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "IDX_CLIENT_STATUS" ON "Clients"("Status");
+CREATE INDEX IF NOT EXISTS "IDX_CLIENT_STATUS" ON "Clients"("Status");
 
 -- =============================================================================
 -- Users Table
 -- =============================================================================
-CREATE TABLE "Users" (
+CREATE TABLE IF NOT EXISTS "Users" (
   "UserID" BIGSERIAL PRIMARY KEY,
   "ClientID" BIGINT NOT NULL REFERENCES "Clients"("ClientID"),
   "SupabaseUserID" VARCHAR(255) UNIQUE,
@@ -58,15 +69,15 @@ CREATE TABLE "Users" (
   "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "IDX_USER_CLIENT" ON "Users"("ClientID");
-CREATE INDEX "IDX_USER_EMAIL" ON "Users"("Email");
-CREATE INDEX "IDX_USER_SUPABASE_ID" ON "Users"("SupabaseUserID");
-CREATE INDEX "IDX_USER_STATUS" ON "Users"("Status");
+CREATE INDEX IF NOT EXISTS "IDX_USER_CLIENT" ON "Users"("ClientID");
+CREATE INDEX IF NOT EXISTS "IDX_USER_EMAIL" ON "Users"("Email");
+CREATE INDEX IF NOT EXISTS "IDX_USER_SUPABASE_ID" ON "Users"("SupabaseUserID");
+CREATE INDEX IF NOT EXISTS "IDX_USER_STATUS" ON "Users"("Status");
 
 -- =============================================================================
 -- Projects Table
 -- =============================================================================
-CREATE TABLE "Projects" (
+CREATE TABLE IF NOT EXISTS "Projects" (
   "ProjectID" BIGSERIAL PRIMARY KEY,
   "ClientID" BIGINT NOT NULL REFERENCES "Clients"("ClientID"),
   "Name" VARCHAR(255) NOT NULL,
@@ -75,13 +86,13 @@ CREATE TABLE "Projects" (
   "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "IDX_PROJECT_CLIENT" ON "Projects"("ClientID");
-CREATE INDEX "IDX_PROJECT_STATUS" ON "Projects"("Status");
+CREATE INDEX IF NOT EXISTS "IDX_PROJECT_CLIENT" ON "Projects"("ClientID");
+CREATE INDEX IF NOT EXISTS "IDX_PROJECT_STATUS" ON "Projects"("Status");
 
 -- =============================================================================
 -- Modules Table
 -- =============================================================================
-CREATE TABLE "Modules" (
+CREATE TABLE IF NOT EXISTS "Modules" (
   "ModuleID" BIGSERIAL PRIMARY KEY,
   "Key" VARCHAR(255) NOT NULL UNIQUE,
   "Name" VARCHAR(255) NOT NULL,
@@ -91,13 +102,13 @@ CREATE TABLE "Modules" (
   "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "IDX_MODULE_KEY" ON "Modules"("Key");
-CREATE INDEX "IDX_MODULE_ACTIVE" ON "Modules"("IsActive");
+CREATE INDEX IF NOT EXISTS "IDX_MODULE_KEY" ON "Modules"("Key");
+CREATE INDEX IF NOT EXISTS "IDX_MODULE_ACTIVE" ON "Modules"("IsActive");
 
 -- =============================================================================
 -- ModuleRuns Table
 -- =============================================================================
-CREATE TABLE "ModuleRuns" (
+CREATE TABLE IF NOT EXISTS "ModuleRuns" (
   "ModuleRunID" BIGSERIAL PRIMARY KEY,
   "ModuleID" BIGINT NOT NULL REFERENCES "Modules"("ModuleID"),
   "ProjectID" BIGINT NOT NULL REFERENCES "Projects"("ProjectID"),
@@ -110,15 +121,15 @@ CREATE TABLE "ModuleRuns" (
   "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "IDX_MODULE_RUN_MODULE" ON "ModuleRuns"("ModuleID");
-CREATE INDEX "IDX_MODULE_RUN_PROJECT" ON "ModuleRuns"("ProjectID");
-CREATE INDEX "IDX_MODULE_RUN_STATUS" ON "ModuleRuns"("Status");
-CREATE INDEX "IDX_MODULE_RUN_USER" ON "ModuleRuns"("TriggeredByUserID");
+CREATE INDEX IF NOT EXISTS "IDX_MODULE_RUN_MODULE" ON "ModuleRuns"("ModuleID");
+CREATE INDEX IF NOT EXISTS "IDX_MODULE_RUN_PROJECT" ON "ModuleRuns"("ProjectID");
+CREATE INDEX IF NOT EXISTS "IDX_MODULE_RUN_STATUS" ON "ModuleRuns"("Status");
+CREATE INDEX IF NOT EXISTS "IDX_MODULE_RUN_USER" ON "ModuleRuns"("TriggeredByUserID");
 
 -- =============================================================================
 -- Persons Table (legacy structure for migration 001-006 compatibility)
 -- =============================================================================
-CREATE TABLE "Persons" (
+CREATE TABLE IF NOT EXISTS "Persons" (
   "PersonID" BIGSERIAL PRIMARY KEY,
   "FirstName" VARCHAR(128),
   "LastName" VARCHAR(128),
@@ -130,13 +141,13 @@ CREATE TABLE "Persons" (
   "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "IDX_PERSON_NAME" ON "Persons"("FirstName", "LastName");
-CREATE INDEX "IDX_PERSON_STATUS" ON "Persons"("Status");
+CREATE INDEX IF NOT EXISTS "IDX_PERSON_NAME" ON "Persons"("FirstName", "LastName");
+CREATE INDEX IF NOT EXISTS "IDX_PERSON_STATUS" ON "Persons"("Status");
 
 -- =============================================================================
 -- PersonProjects Table
 -- =============================================================================
-CREATE TABLE "PersonProjects" (
+CREATE TABLE IF NOT EXISTS "PersonProjects" (
   "PersonProjectID" BIGSERIAL PRIMARY KEY,
   "PersonID" BIGINT NOT NULL REFERENCES "Persons"("PersonID"),
   "ProjectID" BIGINT NOT NULL REFERENCES "Projects"("ProjectID"),
@@ -147,13 +158,13 @@ CREATE TABLE "PersonProjects" (
   CONSTRAINT "UQ_PERSON_PROJECT" UNIQUE ("PersonID", "ProjectID")
 );
 
-CREATE INDEX "IDX_PERSON_PROJECT_PERSON" ON "PersonProjects"("PersonID");
-CREATE INDEX "IDX_PERSON_PROJECT_PROJECT" ON "PersonProjects"("ProjectID");
+CREATE INDEX IF NOT EXISTS "IDX_PERSON_PROJECT_PERSON" ON "PersonProjects"("PersonID");
+CREATE INDEX IF NOT EXISTS "IDX_PERSON_PROJECT_PROJECT" ON "PersonProjects"("ProjectID");
 
 -- =============================================================================
 -- Documents Table
 -- =============================================================================
-CREATE TABLE "Documents" (
+CREATE TABLE IF NOT EXISTS "Documents" (
   "DocumentID" BIGSERIAL PRIMARY KEY,
   "ProjectID" BIGINT REFERENCES "Projects"("ProjectID"),
   "PersonID" BIGINT REFERENCES "Persons"("PersonID"),
@@ -173,9 +184,9 @@ CREATE TABLE "Documents" (
   "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "IDX_DOCUMENT_PROJECT" ON "Documents"("ProjectID");
-CREATE INDEX "IDX_DOCUMENT_PERSON" ON "Documents"("PersonID");
-CREATE INDEX "IDX_DOCUMENT_SOURCE" ON "Documents"("Source");
-CREATE INDEX "IDX_DOCUMENT_KIND" ON "Documents"("DocumentKind");
-CREATE INDEX "IDX_DOCUMENT_VALID" ON "Documents"("IsValid");
-CREATE INDEX "IDX_DOCUMENT_MODULE_RUN" ON "Documents"("ModuleRunID");
+CREATE INDEX IF NOT EXISTS "IDX_DOCUMENT_PROJECT" ON "Documents"("ProjectID");
+CREATE INDEX IF NOT EXISTS "IDX_DOCUMENT_PERSON" ON "Documents"("PersonID");
+CREATE INDEX IF NOT EXISTS "IDX_DOCUMENT_SOURCE" ON "Documents"("Source");
+CREATE INDEX IF NOT EXISTS "IDX_DOCUMENT_KIND" ON "Documents"("DocumentKind");
+CREATE INDEX IF NOT EXISTS "IDX_DOCUMENT_VALID" ON "Documents"("IsValid");
+CREATE INDEX IF NOT EXISTS "IDX_DOCUMENT_MODULE_RUN" ON "Documents"("ModuleRunID");
