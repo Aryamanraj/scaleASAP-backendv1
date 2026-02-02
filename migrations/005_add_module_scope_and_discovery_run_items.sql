@@ -94,7 +94,7 @@ CREATE INDEX IF NOT EXISTS "IDX_DISCOVERY_RUN_ITEMS_PROJECT_PERSON"
 -- Update existing prospect-search-connector module to PROJECT_LEVEL if it exists
 UPDATE "Modules"
 SET "Scope" = 'PROJECT_LEVEL'
-WHERE "ModuleKey" = 'prospect-search-connector';
+WHERE "Key" = 'prospect-search-connector';
 
 -- =============================================================================
 -- VERIFICATION QUERIES (run manually to verify migration)
