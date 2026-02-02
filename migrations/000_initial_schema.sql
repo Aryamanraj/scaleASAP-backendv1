@@ -1,0 +1,174 @@
+-- =============================================================================
+-- Migration: 000_initial_schema.sql
+-- Description: Initial database schema for fresh installations
+-- =============================================================================
+
+-- Create base enums
+CREATE TYPE "EntityStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'DELETED');
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'MEMBER', 'VIEWER');
+CREATE TYPE "ProjectStatus" AS ENUM ('ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED');
+CREATE TYPE "ModuleStatus" AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED');
+
+-- =============================================================================
+-- Clients Table
+-- =============================================================================
+CREATE TABLE "Clients" (
+  "ClientID" BIGSERIAL PRIMARY KEY,
+  "Name" VARCHAR(255) NOT NULL,
+  "Domain" VARCHAR(255),
+  "Status" "EntityStatus" NOT NULL DEFAULT 'ACTIVE',
+  "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX "IDX_CLIENT_STATUS" ON "Clients"("Status");
+
+-- =============================================================================
+-- Users Table
+-- =============================================================================
+CREATE TABLE "Users" (
+  "UserID" BIGSERIAL PRIMARY KEY,
+  "ClientID" BIGINT NOT NULL REFERENCES "Clients"("ClientID"),
+  "Email" VARCHAR(255) NOT NULL UNIQUE,
+  "Name" VARCHAR(255) NOT NULL,
+  "PasswordHash" VARCHAR(255),
+  "Role" "UserRole" NOT NULL DEFAULT 'MEMBER',
+  "Status" "EntityStatus" NOT NULL DEFAULT 'ACTIVE',
+  "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX "IDX_USER_CLIENT" ON "Users"("ClientID");
+CREATE INDEX "IDX_USER_EMAIL" ON "Users"("Email");
+CREATE INDEX "IDX_USER_STATUS" ON "Users"("Status");
+
+-- =============================================================================
+-- Projects Table
+-- =============================================================================
+CREATE TABLE "Projects" (
+  "ProjectID" BIGSERIAL PRIMARY KEY,
+  "ClientID" BIGINT NOT NULL REFERENCES "Clients"("ClientID"),
+  "Name" VARCHAR(255) NOT NULL,
+  "Status" "ProjectStatus" NOT NULL DEFAULT 'ACTIVE',
+  "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX "IDX_PROJECT_CLIENT" ON "Projects"("ClientID");
+CREATE INDEX "IDX_PROJECT_STATUS" ON "Projects"("Status");
+
+-- =============================================================================
+-- Modules Table
+-- =============================================================================
+CREATE TABLE "Modules" (
+  "ModuleID" BIGSERIAL PRIMARY KEY,
+  "Key" VARCHAR(255) NOT NULL UNIQUE,
+  "Name" VARCHAR(255) NOT NULL,
+  "Description" TEXT,
+  "IsActive" BOOLEAN NOT NULL DEFAULT TRUE,
+  "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX "IDX_MODULE_KEY" ON "Modules"("Key");
+CREATE INDEX "IDX_MODULE_ACTIVE" ON "Modules"("IsActive");
+
+-- =============================================================================
+-- ModuleRuns Table
+-- =============================================================================
+CREATE TABLE "ModuleRuns" (
+  "ModuleRunID" BIGSERIAL PRIMARY KEY,
+  "ModuleID" BIGINT NOT NULL REFERENCES "Modules"("ModuleID"),
+  "ProjectID" BIGINT NOT NULL REFERENCES "Projects"("ProjectID"),
+  "Status" "ModuleStatus" NOT NULL DEFAULT 'PENDING',
+  "TriggeredByUserID" BIGINT REFERENCES "Users"("UserID"),
+  "Config" JSONB,
+  "StartedAt" TIMESTAMP WITH TIME ZONE,
+  "FinishedAt" TIMESTAMP WITH TIME ZONE,
+  "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX "IDX_MODULE_RUN_MODULE" ON "ModuleRuns"("ModuleID");
+CREATE INDEX "IDX_MODULE_RUN_PROJECT" ON "ModuleRuns"("ProjectID");
+CREATE INDEX "IDX_MODULE_RUN_STATUS" ON "ModuleRuns"("Status");
+CREATE INDEX "IDX_MODULE_RUN_USER" ON "ModuleRuns"("TriggeredByUserID");
+
+-- =============================================================================
+-- Persons Table (legacy structure for migration 001-006 compatibility)
+-- =============================================================================
+CREATE TABLE "Persons" (
+  "PersonID" BIGSERIAL PRIMARY KEY,
+  "FirstName" VARCHAR(128),
+  "LastName" VARCHAR(128),
+  "PrimaryDisplayName" VARCHAR(255),
+  "Headline" VARCHAR(512),
+  "Status" "EntityStatus" NOT NULL DEFAULT 'ACTIVE',
+  "CreatedByUserID" BIGINT REFERENCES "Users"("UserID"),
+  "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX "IDX_PERSON_NAME" ON "Persons"("FirstName", "LastName");
+CREATE INDEX "IDX_PERSON_STATUS" ON "Persons"("Status");
+
+-- =============================================================================
+-- PersonProjects Table
+-- =============================================================================
+CREATE TABLE "PersonProjects" (
+  "PersonProjectID" BIGSERIAL PRIMARY KEY,
+  "PersonID" BIGINT NOT NULL REFERENCES "Persons"("PersonID"),
+  "ProjectID" BIGINT NOT NULL REFERENCES "Projects"("ProjectID"),
+  "Tag" VARCHAR(64),
+  "CreatedByUserID" BIGINT NOT NULL REFERENCES "Users"("UserID"),
+  "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "UQ_PERSON_PROJECT" UNIQUE ("PersonID", "ProjectID")
+);
+
+CREATE INDEX "IDX_PERSON_PROJECT_PERSON" ON "PersonProjects"("PersonID");
+CREATE INDEX "IDX_PERSON_PROJECT_PROJECT" ON "PersonProjects"("ProjectID");
+
+-- =============================================================================
+-- Documents Table
+-- =============================================================================
+CREATE TABLE "Documents" (
+  "DocumentID" BIGSERIAL PRIMARY KEY,
+  "ProjectID" BIGINT REFERENCES "Projects"("ProjectID"),
+  "PersonID" BIGINT REFERENCES "Persons"("PersonID"),
+  "Source" VARCHAR(64) NOT NULL,
+  "DocumentKind" VARCHAR(128) NOT NULL,
+  "Uri" VARCHAR(2048),
+  "ContentType" VARCHAR(128),
+  "SizeBytes" BIGINT,
+  "ContentHash" VARCHAR(128),
+  "ContentText" TEXT,
+  "ContentJson" JSONB,
+  "MetaJson" JSONB,
+  "IsValid" BOOLEAN NOT NULL DEFAULT TRUE,
+  "InvalidatedMetaJson" JSONB,
+  "ModuleRunID" BIGINT REFERENCES "ModuleRuns"("ModuleRunID"),
+  "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX "IDX_DOCUMENT_PROJECT" ON "Documents"("ProjectID");
+CREATE INDEX "IDX_DOCUMENT_PERSON" ON "Documents"("PersonID");
+CREATE INDEX "IDX_DOCUMENT_SOURCE" ON "Documents"("Source");
+CREATE INDEX "IDX_DOCUMENT_KIND" ON "Documents"("DocumentKind");
+CREATE INDEX "IDX_DOCUMENT_VALID" ON "Documents"("IsValid");
+CREATE INDEX "IDX_DOCUMENT_MODULE_RUN" ON "Documents"("ModuleRunID");
+
+-- =============================================================================
+-- Migrations Tracking Table
+-- =============================================================================
+CREATE TABLE "Migrations" (
+  "MigrationID" BIGSERIAL PRIMARY KEY,
+  "FileName" VARCHAR(255) NOT NULL UNIQUE,
+  "AppliedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "ExecutionTimeMs" INTEGER,
+  "Success" BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX "IDX_MIGRATION_FILENAME" ON "Migrations"("FileName");
+CREATE INDEX "IDX_MIGRATION_APPLIED" ON "Migrations"("AppliedAt");
