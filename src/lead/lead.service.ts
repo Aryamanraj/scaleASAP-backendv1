@@ -8,14 +8,28 @@ import { LeadRepoService } from '../repo/lead-repo.service';
 import { LeadSignalRepoService } from '../repo/lead-signal-repo.service';
 import { CampaignRepoService } from '../repo/campaign-repo.service';
 import { CampaignActivityRepoService } from '../repo/campaign-activity-repo.service';
+import { GeneratedMessageRepoService } from '../repo/generated-message-repo.service';
 import { Lead } from '../repo/entities/lead.entity';
 import { LeadSignal } from '../repo/entities/lead-signal.entity';
 import { Campaign } from '../repo/entities/campaign.entity';
+import {
+  GeneratedMessage,
+  MessagePlatform,
+  MessageType,
+} from '../repo/entities/generated-message.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { CreateLeadsBatchDto } from './dto/create-leads-batch.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 import { LogOutcomeDto } from './dto/log-outcome.dto';
+import { CreateGeneratedMessageDto } from './dto/create-generated-message.dto';
+import { GenerateOutreachDto } from './dto/generate-outreach.dto';
 import { LeadStatus, ActivityType } from '../common/constants/entity.constants';
+import {
+  OutreachAIService,
+  OutreachResult,
+} from '../ai/services/outreach-ai.service';
+import { OnboardingDataRepoService } from '../repo/onboarding-data-repo.service';
+import { ExperimentRepoService } from '../repo/experiment-repo.service';
 
 @Injectable()
 export class LeadService {
@@ -25,6 +39,10 @@ export class LeadService {
     private leadSignalRepoService: LeadSignalRepoService,
     private campaignRepoService: CampaignRepoService,
     private campaignActivityRepoService: CampaignActivityRepoService,
+    private generatedMessageRepoService: GeneratedMessageRepoService,
+    private outreachAIService: OutreachAIService,
+    private onboardingDataRepoService: OnboardingDataRepoService,
+    private experimentRepoService: ExperimentRepoService,
   ) {}
 
   /**
@@ -387,6 +405,188 @@ export class LeadService {
       this.logger.error(
         `LeadService.logCampaignActivity: Error - ${error.stack}`,
       );
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GENERATED MESSAGES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Get all generated messages for a lead.
+   */
+  async getGeneratedMessages(leadId: number): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `LeadService.getGeneratedMessages: Getting messages [leadId=${leadId}]`,
+      );
+
+      const messages = await Promisify<GeneratedMessage[]>(
+        this.generatedMessageRepoService.getByLeadId(leadId),
+      );
+
+      return { data: messages, error: null };
+    } catch (error) {
+      this.logger.error(
+        `LeadService.getGeneratedMessages: Error - ${error.stack}`,
+      );
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Save a generated message for a lead.
+   */
+  async saveGeneratedMessage(
+    leadId: number,
+    dto: CreateGeneratedMessageDto,
+  ): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `LeadService.saveGeneratedMessage: Saving message [leadId=${leadId}, platform=${dto.platform}, type=${dto.messageType}]`,
+      );
+
+      // Verify lead exists
+      const lead = await Promisify<Lead>(
+        this.leadRepoService.get({ where: { LeadID: leadId } }, true),
+      );
+
+      const message = await Promisify<GeneratedMessage>(
+        this.generatedMessageRepoService.create({
+          LeadID: leadId,
+          Platform: dto.platform,
+          MessageType: dto.messageType,
+          Content: dto.content,
+          Context: dto.context,
+          Thinking: dto.thinking,
+          Timestamp: new Date(),
+        }),
+      );
+
+      return { data: message, error: null };
+    } catch (error) {
+      this.logger.error(
+        `LeadService.saveGeneratedMessage: Error - ${error.stack}`,
+      );
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Delete a generated message.
+   */
+  async deleteGeneratedMessage(messageId: number): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `LeadService.deleteGeneratedMessage: Deleting message [messageId=${messageId}]`,
+      );
+
+      const result = await Promisify(
+        this.generatedMessageRepoService.delete(messageId),
+      );
+
+      return { data: result, error: null };
+    } catch (error) {
+      this.logger.error(
+        `LeadService.deleteGeneratedMessage: Error - ${error.stack}`,
+      );
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Generate custom outreach for a lead using AI.
+   */
+  async generateOutreach(
+    leadId: number,
+    dto: GenerateOutreachDto,
+  ): Promise<ResultWithError> {
+    try {
+      this.logger.info(
+        `LeadService.generateOutreach: Generating outreach [leadId=${leadId}, platform=${dto.platform}, type=${dto.messageType}]`,
+      );
+
+      // Get the lead with campaign
+      const lead = await Promisify<Lead>(
+        this.leadRepoService.get(
+          {
+            where: { LeadID: leadId },
+            relations: { Campaign: true },
+          },
+          true,
+        ),
+      );
+
+      // Get onboarding data for sender context
+      const onboardingData = await Promisify(
+        this.onboardingDataRepoService.getAll(
+          {
+            where: { ProjectID: lead.ProjectID },
+            order: { CreatedAt: 'DESC' },
+            take: 1,
+          },
+          false,
+        ),
+      );
+
+      const onboarding = onboardingData?.[0];
+
+      // Build sender context from onboarding data
+      const senderContext = {
+        companyName: onboarding?.CompanyName || 'Company',
+        productDescription:
+          onboarding?.ProductDescription || 'Product description',
+        valueProposition: onboarding?.ValueProposition || 'Value proposition',
+      };
+
+      // Build lead context
+      const leadContext = {
+        name: lead.FullName,
+        title: lead.JobTitle || '',
+        company: lead.Company || '',
+        industry: (lead.EnrichmentData as any)?.industry,
+        linkedInActivity:
+          (lead.EnrichmentData as any)?.recentActivity ||
+          (lead.RawData as any)?.activity,
+        recentPosts:
+          (lead.EnrichmentData as any)?.posts || (lead.RawData as any)?.posts,
+      };
+
+      // Get experiment context if available
+      let experimentContext;
+      if (lead.Campaign?.ExperimentID) {
+        const experiment = await Promisify<any>(
+          this.experimentRepoService.get(
+            { where: { ExperimentID: lead.Campaign.ExperimentID } },
+            false,
+          ),
+        );
+        if (experiment) {
+          const hypotheses = experiment?.Hypotheses || {};
+          experimentContext = {
+            pattern: hypotheses.pattern || '',
+            pain: hypotheses.pain || '',
+            trigger: hypotheses.trigger || '',
+            outreachAngle: hypotheses.outreachAngle || '',
+          };
+        }
+      }
+
+      // Generate the outreach using AI
+      const result: OutreachResult =
+        await this.outreachAIService.generateCustomOutreach(
+          senderContext,
+          leadContext,
+          dto.platform as 'linkedin' | 'email',
+          dto.messageType,
+          dto.context,
+          experimentContext,
+        );
+
+      return { data: result, error: null };
+    } catch (error) {
+      this.logger.error(`LeadService.generateOutreach: Error - ${error.stack}`);
+      return { data: null, error };
     }
   }
 }
