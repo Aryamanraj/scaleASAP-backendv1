@@ -41,13 +41,68 @@ export class MigrationService implements OnModuleInit {
     const dbSync = process.env.DB_SYNC === 'true';
     if (dbSync) {
       this.logger.info(
-        'MigrationService: Skipping migrations (DB_SYNC=true, TypeORM synchronize enabled)',
+        'MigrationService: DB_SYNC=true detected, TypeORM synchronize is managing schema',
       );
+      
+      // Mark all migration files as applied so they're skipped when DB_SYNC is later disabled
+      await this.markAllMigrationsAsApplied();
       return;
     }
 
     // Run migrations on startup
     await this.runMigrations();
+  }
+
+  /**
+   * Marks all migration files as applied in the Migrations table.
+   * Used when DB_SYNC=true to prevent migrations from running when DB_SYNC is later disabled.
+   */
+  private async markAllMigrationsAsApplied(): Promise<void> {
+    try {
+      // Ensure Migrations table exists
+      await this.ensureMigrationsTable();
+
+      // Get all migration files
+      const migrationFiles = this.getMigrationFiles();
+      
+      if (migrationFiles.length === 0) {
+        this.logger.info('MigrationService: No migration files found');
+        return;
+      }
+
+      // Get already recorded migrations
+      const appliedMigrations = await this.getAppliedMigrations();
+
+      // Insert fake records for any missing migrations
+      let markedCount = 0;
+      for (const fileName of migrationFiles) {
+        if (!appliedMigrations.has(fileName)) {
+          const filePath = path.join(this.migrationsPath, fileName);
+          const content = fs.readFileSync(filePath, 'utf8');
+          const checksum = this.computeChecksum(content);
+          
+          await this.recordMigration(fileName, checksum);
+          markedCount++;
+          this.logger.info(`MigrationService: Marked migration as applied [name=${fileName}]`);
+        }
+      }
+
+      if (markedCount > 0) {
+        this.logger.info(
+          `MigrationService: Marked ${markedCount} migrations as applied (DB_SYNC=true)`,
+        );
+      } else {
+        this.logger.info(
+          'MigrationService: All migrations already marked as applied',
+        );
+      }
+    } catch (error) {
+      this.logger.error('MigrationService: Failed to mark migrations as applied', {
+        error: error.message,
+        stack: error.stack,
+      });
+      // Don't throw - this is non-critical when DB_SYNC is enabled
+    }
   }
 
   /**
