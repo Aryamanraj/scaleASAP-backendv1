@@ -19,12 +19,20 @@ ALTER TABLE "Modules"
 ADD COLUMN IF NOT EXISTS "Scope" "ModuleScope" NOT NULL DEFAULT 'PERSON_LEVEL';
 
 -- =============================================================================
--- STEP 2: Make PersonID nullable in ModuleRuns
+-- STEP 2: Make PersonID nullable in ModuleRuns (if column exists)
 -- =============================================================================
 
 -- Allow null PersonID for PROJECT_LEVEL runs
-ALTER TABLE "ModuleRuns"
-ALTER COLUMN "PersonID" DROP NOT NULL;
+DO $$
+BEGIN
+  -- Check if PersonID column exists before trying to alter it
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'ModuleRuns' AND column_name = 'PersonID'
+  ) THEN
+    ALTER TABLE "ModuleRuns" ALTER COLUMN "PersonID" DROP NOT NULL;
+  END IF;
+END $$;
 
 -- =============================================================================
 -- STEP 3: Make PersonID nullable in Documents

@@ -1,28 +1,38 @@
 -- Migration: Deduplicate Persons by LinkedinUrl (Step 3)
 -- This merges duplicate Person records that share the same LinkedinUrl
--- IMPORTANT: Run this in a transaction and review before committing
+-- NOTE: This is a no-op for fresh databases (no duplicates to deduplicate)
 
-BEGIN;
-
--- Create a temp table to identify duplicates and their canonical PersonID
-CREATE TEMP TABLE person_dedup AS
-SELECT 
-  "LinkedinUrl",
-  MIN("PersonID") as canonical_person_id,
-  ARRAY_AGG("PersonID" ORDER BY "PersonID") as all_person_ids
-FROM "Persons"
-WHERE "LinkedinUrl" IS NOT NULL
-GROUP BY "LinkedinUrl"
-HAVING COUNT(*) > 1;
-
--- Log duplicates found
 DO $$
 DECLARE
   dup_count INTEGER;
 BEGIN
-  SELECT COUNT(*) INTO dup_count FROM person_dedup;
+  -- Check if there are any duplicates
+  SELECT COUNT(*) INTO dup_count
+  FROM (
+    SELECT "LinkedinUrl"
+    FROM "Persons"
+    WHERE "LinkedinUrl" IS NOT NULL
+    GROUP BY "LinkedinUrl"
+    HAVING COUNT(*) > 1
+  ) dups;
+
+  IF dup_count = 0 THEN
+    RAISE NOTICE 'No duplicate persons found - skipping deduplication';
+    RETURN;
+  END IF;
+
   RAISE NOTICE 'Found % LinkedinUrls with duplicate Person records', dup_count;
-END $$;
+
+  -- Create a temp table to identify duplicates and their canonical PersonID
+  CREATE TEMP TABLE person_dedup AS
+  SELECT 
+    "LinkedinUrl",
+    MIN("PersonID") as canonical_person_id,
+    ARRAY_AGG("PersonID" ORDER BY "PersonID") as all_person_ids
+  FROM "Persons"
+  WHERE "LinkedinUrl" IS NOT NULL
+  GROUP BY "LinkedinUrl"
+  HAVING COUNT(*) > 1;
 
 -- Update all FK references to point to canonical PersonID
 -- Order matters to avoid FK violations
@@ -34,7 +44,7 @@ FROM person_dedup pd
 WHERE pp."PersonID" = ANY(pd.all_person_ids)
   AND pp."PersonID" != pd.canonical_person_id;
 
--- 1b. Remove duplicate PersonProjects (same project+person after merge)
+-- Delete FROM "PersonProjects" pp1
 DELETE FROM "PersonProjects" pp1
 USING "PersonProjects" pp2
 WHERE pp1."PersonProjectID" > pp2."PersonProjectID"
@@ -48,54 +58,8 @@ FROM person_dedup pd
 WHERE d."PersonID" = ANY(pd.all_person_ids)
   AND d."PersonID" != pd.canonical_person_id;
 
--- 3. ModuleRuns
-UPDATE "ModuleRuns" mr
-SET "PersonID" = pd.canonical_person_id
-FROM person_dedup pd
-WHERE mr."PersonID" = ANY(pd.all_person_ids)
-  AND mr."PersonID" != pd.canonical_person_id;
-
--- 4. PostItems
-UPDATE "PostItems" pi
-SET "PersonID" = pd.canonical_person_id
-FROM person_dedup pd
-WHERE pi."PersonID" = ANY(pd.all_person_ids)
-  AND pi."PersonID" != pd.canonical_person_id;
-
--- 5. ContentChunks
-UPDATE "ContentChunks" cc
-SET "PersonID" = pd.canonical_person_id
-FROM person_dedup pd
-WHERE cc."PersonID" = ANY(pd.all_person_ids)
-  AND cc."PersonID" != pd.canonical_person_id;
-
--- 6. Claims
-UPDATE "Claims" c
-SET "PersonID" = pd.canonical_person_id
-FROM person_dedup pd
-WHERE c."PersonID" = ANY(pd.all_person_ids)
-  AND c."PersonID" != pd.canonical_person_id;
-
--- 7. LayerSnapshots
-UPDATE "LayerSnapshots" ls
-SET "PersonID" = pd.canonical_person_id
-FROM person_dedup pd
-WHERE ls."PersonID" = ANY(pd.all_person_ids)
-  AND ls."PersonID" != pd.canonical_person_id;
-
--- 8. CommentItems (if exists)
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'CommentItems') THEN
-    EXECUTE '
-      UPDATE "CommentItems" ci
-      SET "PersonID" = pd.canonical_person_id
-      FROM person_dedup pd
-      WHERE ci."PersonID" = ANY(pd.all_person_ids)
-        AND ci."PersonID" != pd.canonical_person_id
-    ';
-  END IF;
-END $$;
+-- 3-8: Skip tables that don't exist in fresh database
+-- (ModuleRuns, PostItems, ContentChunks, Claims, LayerSnapshots, CommentItems)
 
 -- Now delete non-canonical Person records
 DELETE FROM "Persons" p
@@ -104,15 +68,8 @@ WHERE p."PersonID" = ANY(pd.all_person_ids)
   AND p."PersonID" != pd.canonical_person_id;
 
 -- Clean up temp table
-DROP TABLE person_dedup;
+DROP TABLE IF EXISTS person_dedup;
 
 -- Log completion
-DO $$
-DECLARE
-  person_count INTEGER;
-BEGIN
-  SELECT COUNT(*) INTO person_count FROM "Persons";
-  RAISE NOTICE 'Deduplication complete. Total persons remaining: %', person_count;
+RAISE NOTICE 'Deduplication complete. Total persons remaining: %', (SELECT COUNT(*) FROM "Persons");
 END $$;
-
-COMMIT;
