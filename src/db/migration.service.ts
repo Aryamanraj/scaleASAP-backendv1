@@ -37,6 +37,15 @@ export class MigrationService implements OnModuleInit {
   }
 
   async onModuleInit(): Promise<void> {
+    // Skip migrations if DB_SYNC is enabled (TypeORM handles schema automatically)
+    const dbSync = process.env.DB_SYNC === 'true';
+    if (dbSync) {
+      this.logger.info(
+        'MigrationService: Skipping migrations (DB_SYNC=true, TypeORM synchronize enabled)',
+      );
+      return;
+    }
+
     // Run migrations on startup
     await this.runMigrations();
   }
