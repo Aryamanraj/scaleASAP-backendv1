@@ -43,7 +43,7 @@ export class MigrationService implements OnModuleInit {
       this.logger.info(
         'MigrationService: DB_SYNC=true detected, TypeORM synchronize is managing schema',
       );
-      
+
       // Mark all migration files as applied so they're skipped when DB_SYNC is later disabled
       await this.markAllMigrationsAsApplied();
       return;
@@ -64,7 +64,7 @@ export class MigrationService implements OnModuleInit {
 
       // Get all migration files
       const migrationFiles = this.getMigrationFiles();
-      
+
       if (migrationFiles.length === 0) {
         this.logger.info('MigrationService: No migration files found');
         return;
@@ -80,10 +80,12 @@ export class MigrationService implements OnModuleInit {
           const filePath = path.join(this.migrationsPath, fileName);
           const content = fs.readFileSync(filePath, 'utf8');
           const checksum = this.computeChecksum(content);
-          
+
           await this.recordMigration(fileName, checksum);
           markedCount++;
-          this.logger.info(`MigrationService: Marked migration as applied [name=${fileName}]`);
+          this.logger.info(
+            `MigrationService: Marked migration as applied [name=${fileName}]`,
+          );
         }
       }
 
@@ -97,10 +99,13 @@ export class MigrationService implements OnModuleInit {
         );
       }
     } catch (error) {
-      this.logger.error('MigrationService: Failed to mark migrations as applied', {
-        error: error.message,
-        stack: error.stack,
-      });
+      this.logger.error(
+        'MigrationService: Failed to mark migrations as applied',
+        {
+          error: error.message,
+          stack: error.stack,
+        },
+      );
       // Don't throw - this is non-critical when DB_SYNC is enabled
     }
   }
