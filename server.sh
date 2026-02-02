@@ -18,7 +18,7 @@ function print_banner() {
 }
 
 # Default API URL
-api_url="http://localhost:3005"
+api_url="http://localhost:3075"
 
 # Define a help function to display usage information
 usage() {
@@ -99,13 +99,13 @@ fi
 if [ "${indexer_flag}" = true ]; then
     print_banner "PM2 INDEXER PROCESS"
     echo -e "${YELLOW}Starting or restarting PM2 Indexer process...${NC}"
-    pm2 restart ./dist/src/indexer/indexer.js --name "Indexer" || pm2 start ./dist/src/indexer/indexer.js --name "Indexer"
+    pm2 restart ./dist/src/indexer/indexer.js --name "Indexer3" || pm2 start ./dist/src/indexer/indexer.js --name "Indexer3"
 fi
 
 if [ "${mainserver_flag}" = true ]; then
     print_banner "PM2 MAIN SERVER PROCESS"
     echo -e "${YELLOW}Starting or restarting PM2 Main Server process...${NC}"
-    pm2 restart ./dist/src/app/app.js --name "mainServer" || pm2 start ./dist/src/app/app.js --name "mainServer"
+    pm2 restart ./dist/src/app/app.js --name "mainServer3" || pm2 start ./dist/src/app/app.js --name "mainServer3"
 fi
 
 # Execute cURL requests if the flag is set
@@ -116,7 +116,7 @@ if [ "${curl_flag}" = true ]; then
     echo -e "${YELLOW}Hitting API at $api_url${NC}"
 
     echo -e "${CYAN}Starting late send pong scheduler:${NC}"
-    curl -X POST "$api_url/admin/lateSendPongSettlement/start" -H 'x-api-key: admin-api-key' -H 'Content-Type: application/json' --data-raw '{"timePeriod":"*/1 * * * *"}'
+    # curl -X POST "$api_url/admin/lateSendPongSettlement/start" -H 'x-api-key: admin-api-key' -H 'Content-Type: application/json' --data-raw '{"timePeriod":"*/1 * * * *"}'
     echo -e ""
 
     echo -e "${CYAN}Creating new indexed state:${NC}"
