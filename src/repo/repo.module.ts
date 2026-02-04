@@ -58,6 +58,8 @@ import { DiscoverySessionRepoService } from './discovery-session-repo.service';
 import { DiscoveryFeedbackRepoService } from './discovery-feedback-repo.service';
 import { GeneratedMessage } from './entities/generated-message.entity';
 import { GeneratedMessageRepoService } from './generated-message-repo.service';
+import { FlowRun } from './entities/flow-run.entity';
+import { FlowRunRepoService } from './flow-run-repo.service';
 
 export const entities = [
   Client,
@@ -89,6 +91,7 @@ export const entities = [
   DiscoverySession,
   DiscoveryFeedback,
   GeneratedMessage,
+  FlowRun,
 ];
 
 export const repoServices = [
@@ -121,6 +124,7 @@ export const repoServices = [
   DiscoverySessionRepoService,
   DiscoveryFeedbackRepoService,
   GeneratedMessageRepoService,
+  FlowRunRepoService,
 ];
 
 @Module({

@@ -9,16 +9,31 @@ import { RpcModule } from '../rpc/rpc.module';
 import { LateLogConsumer } from './consumers/late-log.consumer';
 import { LateLogObserverService } from './services/late-log-observer.service';
 import { ModuleRunConsumer } from './consumers/module-run.consumer';
+import { IndexerFlowConsumer } from './consumers/indexer-flow.consumer';
 import { ModuleDispatcherService } from './services/module-dispatcher.service';
 import { NoopModuleHandler } from './services/handlers/noop-module.handler';
 import { ManualDocumentConnectorHandler } from './services/handlers/manual-document-connector.handler';
 import { CoreIdentityEnricherHandler } from './services/handlers/core-identity-enricher.handler';
 import { Layer1ComposerHandler } from './services/handlers/layer-1-composer.handler';
+import { DecisionMakerBrandComposerHandler } from './services/handlers/decision-maker-brand-composer.handler';
+import { RevenueSignalComposerHandler } from './services/handlers/revenue-signal-composer.handler';
+import { LinkedinActivityComposerHandler } from './services/handlers/linkedin-activity-composer.handler';
+import { CompetitorMentionsComposerHandler } from './services/handlers/competitor-mentions-composer.handler';
+import { HiringSignalsComposerHandler } from './services/handlers/hiring-signals-composer.handler';
+import { TopicThemesComposerHandler } from './services/handlers/topic-themes-composer.handler';
+import { ToneSignalsComposerHandler } from './services/handlers/tone-signals-composer.handler';
+import { ColleagueNetworkComposerHandler } from './services/handlers/colleague-network-composer.handler';
+import { ExternalSocialsComposerHandler } from './services/handlers/external-socials-composer.handler';
+import { EventAttendanceComposerHandler } from './services/handlers/event-attendance-composer.handler';
+import { LowQualityEngagementComposerHandler } from './services/handlers/low-quality-engagement-composer.handler';
+import { DesignHelpSignalsComposerHandler } from './services/handlers/design-help-signals-composer.handler';
+import { FinalSummaryComposerHandler } from './services/handlers/final-summary-composer.handler';
 import { DocumentReaderService } from './services/document-reader.service';
 import { ClaimWriterService } from './services/claim-writer.service';
 import { LayerSnapshotWriterService } from './services/layer-snapshot-writer.service';
 import { ApifyService } from './services/apify.service';
 import { LinkedinDocumentWriterService } from './services/linkedin-document-writer.service';
+import { IndexerFlowProcessorService } from '../indexer-job/indexer-flow-processor.service';
 import { LinkedinConnectorModule } from '../connectors/linkedin/linkedin.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { LinkedinCoreIdentityModule } from '../enrichers/linkedin-core-identity/linkedin-core-identity.module';
@@ -36,6 +51,7 @@ import { AIModule } from '../ai/ai.module';
       { name: QueueNames.NEW_LOGS },
       { name: QueueNames.LATE_LOGS },
       { name: QueueNames.MODULE_RUNS },
+      { name: QueueNames.INDEXER_FLOWS },
     ),
     HttpModule,
     RepoModule,
@@ -57,16 +73,31 @@ import { AIModule } from '../ai/ai.module';
     LateLogConsumer,
     LateLogObserverService,
     ModuleRunConsumer,
+    IndexerFlowConsumer,
     ModuleDispatcherService,
     NoopModuleHandler,
     ManualDocumentConnectorHandler,
     CoreIdentityEnricherHandler,
     Layer1ComposerHandler,
+    DecisionMakerBrandComposerHandler,
+    RevenueSignalComposerHandler,
+    LinkedinActivityComposerHandler,
+    CompetitorMentionsComposerHandler,
+    HiringSignalsComposerHandler,
+    TopicThemesComposerHandler,
+    ToneSignalsComposerHandler,
+    ColleagueNetworkComposerHandler,
+    ExternalSocialsComposerHandler,
+    EventAttendanceComposerHandler,
+    LowQualityEngagementComposerHandler,
+    DesignHelpSignalsComposerHandler,
+    FinalSummaryComposerHandler,
     DocumentReaderService,
     ClaimWriterService,
     LayerSnapshotWriterService,
     ApifyService,
     LinkedinDocumentWriterService,
+    IndexerFlowProcessorService,
   ],
   controllers: [],
 })

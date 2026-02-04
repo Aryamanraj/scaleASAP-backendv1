@@ -3,6 +3,7 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DBConfig } from './db.config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MigrationService } from './migration.service';
+import { SeedService } from './seed.service';
 
 @Module({})
 export class DBModule {
@@ -59,8 +60,8 @@ export class DBModule {
         }),
       ],
       controllers: [],
-      providers: [MigrationService],
-      exports: [MigrationService],
+      providers: [MigrationService, SeedService],
+      exports: [MigrationService, SeedService],
     };
   }
 }
