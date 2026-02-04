@@ -1,16 +1,17 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { RepoModule } from '../../repo/repo.module';
-import { ApifyService } from '../../observer/services/apify.service';
 import { LinkedinDocumentWriterService } from '../../observer/services/linkedin-document-writer.service';
 import { LinkedinProfileConnectorHandler } from './handlers/linkedin-profile-connector.handler';
 import { LinkedinPostsConnectorHandler } from './handlers/linkedin-posts-connector.handler';
+import { LinkedinProvider } from '../../scraper/providers/linkedin.provider';
 
 @Module({
-  imports: [HttpModule, RepoModule],
+  imports: [ConfigModule, HttpModule, RepoModule],
   providers: [
-    ApifyService,
     LinkedinDocumentWriterService,
+    LinkedinProvider,
     LinkedinProfileConnectorHandler,
     LinkedinPostsConnectorHandler,
   ],

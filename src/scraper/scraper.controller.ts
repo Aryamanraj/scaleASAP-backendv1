@@ -17,10 +17,12 @@ import { Promisify } from '../common/helpers/promisifier';
 import { ScraperService } from './scraper.service';
 import { ScrapeRequestDto } from './dto/scrape-request.dto';
 import { SearchRequestDto } from './dto/search-request.dto';
+import { LinkedinProfileScrapeRequestDto } from './dto/linkedin-profile-scrape-request.dto';
 import {
   ScraperResponse,
   SearchResponse,
 } from '../common/interfaces/scraper.interfaces';
+import { ScrapeProfileResponse } from '../common/interfaces/linkedin-scraper.interfaces';
 
 @Controller('scraper')
 @ApiTags('Scraper')
@@ -100,6 +102,42 @@ export class ScraperController {
         ? error.status
         : HttpStatus.INTERNAL_SERVER_ERROR;
       resMessage = `Failed to execute search request : ${
+        error?.message ?? 'Unknown error'
+      }`;
+      resSuccess = false;
+    }
+
+    makeResponse(res, resStatus, resSuccess, resMessage, resData);
+  }
+
+  @Post('linkedin/profile')
+  @ApiOperation({ summary: 'Scrape LinkedIn profiles via local scraper' })
+  @ApiOkResponseGeneric({
+    type: Object,
+    description: 'LinkedIn profile scrape completed successfully',
+  })
+  async scrapeLinkedinProfiles(
+    @Body() dto: LinkedinProfileScrapeRequestDto,
+    @Res() res: Response,
+  ) {
+    let resStatus = HttpStatus.OK;
+    let resMessage = 'LinkedIn profile scrape completed successfully';
+    let resData = null;
+    let resSuccess = true;
+
+    try {
+      const response = await Promisify<ScrapeProfileResponse>(
+        this.scraperService.scrapeLinkedinProfiles({
+          urls: dto.urls,
+          options: dto.options,
+        }),
+      );
+      resData = response;
+    } catch (error) {
+      resStatus = error?.status
+        ? error.status
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+      resMessage = `Failed to scrape LinkedIn profiles : ${
         error?.message ?? 'Unknown error'
       }`;
       resSuccess = false;

@@ -10,6 +10,19 @@ import { NoopModuleHandler } from './handlers/noop-module.handler';
 import { ManualDocumentConnectorHandler } from './handlers/manual-document-connector.handler';
 import { CoreIdentityEnricherHandler } from './handlers/core-identity-enricher.handler';
 import { Layer1ComposerHandler } from './handlers/layer-1-composer.handler';
+import { DecisionMakerBrandComposerHandler } from './handlers/decision-maker-brand-composer.handler';
+import { RevenueSignalComposerHandler } from './handlers/revenue-signal-composer.handler';
+import { LinkedinActivityComposerHandler } from './handlers/linkedin-activity-composer.handler';
+import { CompetitorMentionsComposerHandler } from './handlers/competitor-mentions-composer.handler';
+import { HiringSignalsComposerHandler } from './handlers/hiring-signals-composer.handler';
+import { TopicThemesComposerHandler } from './handlers/topic-themes-composer.handler';
+import { ToneSignalsComposerHandler } from './handlers/tone-signals-composer.handler';
+import { ColleagueNetworkComposerHandler } from './handlers/colleague-network-composer.handler';
+import { ExternalSocialsComposerHandler } from './handlers/external-socials-composer.handler';
+import { EventAttendanceComposerHandler } from './handlers/event-attendance-composer.handler';
+import { LowQualityEngagementComposerHandler } from './handlers/low-quality-engagement-composer.handler';
+import { DesignHelpSignalsComposerHandler } from './handlers/design-help-signals-composer.handler';
+import { FinalSummaryComposerHandler } from './handlers/final-summary-composer.handler';
 import { LinkedinProfileConnectorHandler } from '../../connectors/linkedin/handlers/linkedin-profile-connector.handler';
 import { LinkedinPostsConnectorHandler } from '../../connectors/linkedin/handlers/linkedin-posts-connector.handler';
 import { LinkedinCoreIdentityEnricherHandler } from '../../enrichers/linkedin-core-identity/handlers/linkedin-core-identity-enricher.handler';
@@ -35,6 +48,19 @@ export class ModuleDispatcherService {
     private manualDocumentConnectorHandler: ManualDocumentConnectorHandler,
     private coreIdentityEnricherHandler: CoreIdentityEnricherHandler,
     private layer1ComposerHandler: Layer1ComposerHandler,
+    private decisionMakerBrandComposerHandler: DecisionMakerBrandComposerHandler,
+    private revenueSignalComposerHandler: RevenueSignalComposerHandler,
+    private linkedinActivityComposerHandler: LinkedinActivityComposerHandler,
+    private competitorMentionsComposerHandler: CompetitorMentionsComposerHandler,
+    private hiringSignalsComposerHandler: HiringSignalsComposerHandler,
+    private topicThemesComposerHandler: TopicThemesComposerHandler,
+    private toneSignalsComposerHandler: ToneSignalsComposerHandler,
+    private colleagueNetworkComposerHandler: ColleagueNetworkComposerHandler,
+    private externalSocialsComposerHandler: ExternalSocialsComposerHandler,
+    private eventAttendanceComposerHandler: EventAttendanceComposerHandler,
+    private lowQualityEngagementComposerHandler: LowQualityEngagementComposerHandler,
+    private designHelpSignalsComposerHandler: DesignHelpSignalsComposerHandler,
+    private finalSummaryComposerHandler: FinalSummaryComposerHandler,
     private linkedinProfileConnectorHandler: LinkedinProfileConnectorHandler,
     private linkedinPostsConnectorHandler: LinkedinPostsConnectorHandler,
     private linkedinCoreIdentityEnricherHandler: LinkedinCoreIdentityEnricherHandler,
@@ -83,6 +109,32 @@ export class ModuleDispatcherService {
           return await this.coreIdentityEnricherHandler.execute(run);
         case 'layer-1-composer':
           return await this.layer1ComposerHandler.execute(run);
+        case MODULE_KEYS.DECISION_MAKER_BRAND_COMPOSER:
+          return await this.decisionMakerBrandComposerHandler.execute(run);
+        case MODULE_KEYS.REVENUE_SIGNAL_COMPOSER:
+          return await this.revenueSignalComposerHandler.execute(run);
+        case MODULE_KEYS.LINKEDIN_ACTIVITY_COMPOSER:
+          return await this.linkedinActivityComposerHandler.execute(run);
+        case MODULE_KEYS.COMPETITOR_MENTIONS_COMPOSER:
+          return await this.competitorMentionsComposerHandler.execute(run);
+        case MODULE_KEYS.HIRING_SIGNALS_COMPOSER:
+          return await this.hiringSignalsComposerHandler.execute(run);
+        case MODULE_KEYS.TOPIC_THEMES_COMPOSER:
+          return await this.topicThemesComposerHandler.execute(run);
+        case MODULE_KEYS.TONE_SIGNALS_COMPOSER:
+          return await this.toneSignalsComposerHandler.execute(run);
+        case MODULE_KEYS.COLLEAGUE_NETWORK_COMPOSER:
+          return await this.colleagueNetworkComposerHandler.execute(run);
+        case MODULE_KEYS.EXTERNAL_SOCIALS_COMPOSER:
+          return await this.externalSocialsComposerHandler.execute(run);
+        case MODULE_KEYS.EVENT_ATTENDANCE_COMPOSER:
+          return await this.eventAttendanceComposerHandler.execute(run);
+        case MODULE_KEYS.LOW_QUALITY_ENGAGEMENT_COMPOSER:
+          return await this.lowQualityEngagementComposerHandler.execute(run);
+        case MODULE_KEYS.DESIGN_HELP_SIGNALS_COMPOSER:
+          return await this.designHelpSignalsComposerHandler.execute(run);
+        case MODULE_KEYS.FINAL_SUMMARY_COMPOSER:
+          return await this.finalSummaryComposerHandler.execute(run);
         case LINKEDIN_PROFILE_CONNECTOR_KEY:
           return await this.linkedinProfileConnectorHandler.execute(run);
         case LINKEDIN_POSTS_CONNECTOR_KEY:
