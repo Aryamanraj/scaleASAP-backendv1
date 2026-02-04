@@ -14,6 +14,30 @@ import { ResultWithError } from '../common/interfaces';
 import { AsyncJobResponseDto } from './dto/async-job-response.dto';
 import { BaseJobData } from './interfaces/job-data.interface';
 
+export interface AsyncJobStatusData {
+  jobId: string;
+  jobType: AsyncJobType;
+  status: string;
+  progress: number;
+  totalSteps: number;
+  completedSteps: number;
+  currentStep: string;
+  output: Record<string, unknown> | null;
+  errorMessage: string | null;
+  createdAt: Date;
+  startedAt: Date | null;
+  completedAt: Date | null;
+}
+
+export interface AsyncJobListItem {
+  jobId: string;
+  jobType: AsyncJobType;
+  status: string;
+  progress: number | Record<string, unknown>;
+  currentStep: string;
+  createdAt: Date;
+}
+
 @Injectable()
 export class AsyncJobService {
   private queues: Map<string, Queue> = new Map();

@@ -14,14 +14,27 @@ export class QueueModule {
   private static getConnectionDetails(
     configService: ConfigService,
   ): BullRootModuleOptions {
-    return {
+    const config = {
       redis: {
         host: configService.get('REDIS_HOST'),
         port: configService.get('REDIS_PORT'),
         // password: configService.get('REDIS_PASSWORD'), // removing this for dev to help with unnecessary logs
         // username: configService.get('REDIS_USER'),
+        retryStrategy: (times) => {
+          console.log(`Redis retry attempt ${times}`);
+          return Math.min(times * 50, 2000);
+        },
       },
     };
+
+    console.log(
+      `Bull Redis config: ${JSON.stringify({
+        host: config.redis.host,
+        port: config.redis.port,
+      })}`,
+    );
+
+    return config;
   }
 
   public static forRoot(): DynamicModule {

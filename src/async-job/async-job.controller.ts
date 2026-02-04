@@ -29,7 +29,11 @@ import { ApiOkResponseGeneric } from '../common/decorators/apiOkResponse.decorat
 import { makeResponse } from '../common/helpers/reponseMaker';
 import { Promisify } from '../common/helpers/promisifier';
 import { AsyncJobType } from '../common/constants/entity.constants';
-import { AsyncJobService } from './async-job.service';
+import {
+  AsyncJobListItem,
+  AsyncJobService,
+  AsyncJobStatusData,
+} from './async-job.service';
 import {
   AsyncJobResponseDto,
   CreateJobDto,
@@ -56,7 +60,7 @@ export class AsyncJobController {
     @Query('jobType') jobType: AsyncJobType,
     @Res() res: Response,
   ) {
-    const result = await Promisify<any>(
+    const result = await Promisify<AsyncJobStatusData>(
       this.asyncJobService.getJobStatus(jobId, jobType),
     );
     return makeResponse(
@@ -86,7 +90,7 @@ export class AsyncJobController {
     @Query('status') status: string,
     @Res() res: Response,
   ) {
-    const result = await Promisify<any[]>(
+    const result = await Promisify<AsyncJobListItem[]>(
       this.asyncJobService.getJobsForProject(workspaceId, status),
     );
     const mapped = result.map((j) => this.asyncJobService.toResponseDto(j));

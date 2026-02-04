@@ -12,6 +12,7 @@ import { GeneratedMessageRepoService } from '../repo/generated-message-repo.serv
 import { Lead } from '../repo/entities/lead.entity';
 import { LeadSignal } from '../repo/entities/lead-signal.entity';
 import { Campaign } from '../repo/entities/campaign.entity';
+import { Experiment } from '../repo/entities/experiment.entity';
 import {
   GeneratedMessage,
   MessagePlatform,
@@ -555,19 +556,18 @@ export class LeadService {
       // Get experiment context if available
       let experimentContext;
       if (lead.Campaign?.ExperimentID) {
-        const experiment = await Promisify<any>(
+        const experiment = await Promisify<Experiment | null>(
           this.experimentRepoService.get(
             { where: { ExperimentID: lead.Campaign.ExperimentID } },
             false,
           ),
         );
         if (experiment) {
-          const hypotheses = experiment?.Hypotheses || {};
           experimentContext = {
-            pattern: hypotheses.pattern || '',
-            pain: hypotheses.pain || '',
-            trigger: hypotheses.trigger || '',
-            outreachAngle: hypotheses.outreachAngle || '',
+            pattern: experiment.Pattern || '',
+            pain: experiment.Pain || '',
+            trigger: experiment.Trigger || '',
+            outreachAngle: experiment.OutreachAngle || '',
           };
         }
       }

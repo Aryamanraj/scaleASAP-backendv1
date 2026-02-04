@@ -1,12 +1,14 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { AdminAuthGuard } from './admin-auth.guard';
 import { UserAuthGuard } from './user-auth.guard';
+import { SupabaseAuthGuard } from './supabase-auth.guard';
 
 @Injectable()
 export class CompositeAuthGuard implements CanActivate {
   constructor(
     private readonly adminAuthGuard: AdminAuthGuard,
     private readonly userAuthGuard: UserAuthGuard,
+    private readonly supabaseAuthGuard: SupabaseAuthGuard,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -14,6 +16,10 @@ export class CompositeAuthGuard implements CanActivate {
       return true;
     }
     if (await this.userAuthGuard.canActivate(context)) {
+      return true;
+    }
+
+    if (await this.supabaseAuthGuard.canActivate(context)) {
       return true;
     }
 

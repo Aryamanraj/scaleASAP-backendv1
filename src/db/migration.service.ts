@@ -190,9 +190,31 @@ export class MigrationService implements OnModuleInit {
       );
 
       // Filter to pending migrations
-      const pendingMigrations = migrationFiles.filter(
+      let pendingMigrations = migrationFiles.filter(
         (file) => !appliedMigrations.has(file),
       );
+
+      if (appliedMigrations.size > 0) {
+        const initialSchemaFile = pendingMigrations.find((file) =>
+          file.startsWith('000_'),
+        );
+
+        if (initialSchemaFile) {
+          const filePath = path.join(this.migrationsPath, initialSchemaFile);
+          const content = fs.readFileSync(filePath, 'utf8');
+          const checksum = this.computeChecksum(content);
+
+          await this.recordMigration(initialSchemaFile, checksum);
+
+          pendingMigrations = pendingMigrations.filter(
+            (file) => file !== initialSchemaFile,
+          );
+
+          this.logger.info(
+            `MigrationService: Skipped initial schema migration for existing database [name=${initialSchemaFile}]`,
+          );
+        }
+      }
 
       if (pendingMigrations.length === 0) {
         this.logger.info(`MigrationService: No pending migrations to run`);
