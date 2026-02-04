@@ -2,6 +2,7 @@ export const QueueNames = {
   NEW_LOGS: 'new-logs', // handle web3 interaction logs updates
   LATE_LOGS: 'late-logs', //handle late log web3 interactions
   MODULE_RUNS: 'module-runs', // handle module run executions
+  INDEXER_FLOWS: 'indexer-flows', // handle flow run orchestration
   // New queues for frontend-v1 migration
   DISCOVERY: 'discovery', // handle discovery chat and experiment generation
   OUTREACH: 'outreach', // handle outreach message generation
@@ -16,6 +17,7 @@ export const Queues = [
   QueueNames.NEW_LOGS,
   QueueNames.LATE_LOGS,
   QueueNames.MODULE_RUNS,
+  QueueNames.INDEXER_FLOWS,
   QueueNames.DISCOVERY,
   QueueNames.OUTREACH,
   QueueNames.LEAD_ENRICHMENT,
@@ -28,6 +30,7 @@ export const QUEUE_JOB_NAMES = {
   PONG_TRANSACTION: 'pong-queue', //job name for sending pong
   LATE_PONG_TRANSACTION: 'late-pong-queue', //job name for sending pong
   EXECUTE_MODULE_RUN: 'execute-module-run', //job name for executing module runs
+  RUN_INDEXER_FLOW: 'run-indexer-flow', //job name for orchestrating flow runs
   // New job names for frontend-v1 migration
   DISCOVERY_CHAT: 'discovery-chat',
   GENERATE_EXPERIMENTS: 'generate-experiments',

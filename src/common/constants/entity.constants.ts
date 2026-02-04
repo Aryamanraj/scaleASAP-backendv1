@@ -49,6 +49,15 @@ export enum ModuleRunStatus {
   CANCELLED = 'CANCELLED',
 }
 
+// Flow Run Status Values
+export enum FlowRunStatus {
+  QUEUED = 'QUEUED',
+  RUNNING = 'RUNNING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
+
 // Discovery Run Item Status Values
 export enum DiscoveryRunItemStatus {
   CREATED = 'CREATED',

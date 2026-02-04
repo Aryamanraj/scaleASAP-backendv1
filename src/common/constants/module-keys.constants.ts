@@ -22,6 +22,19 @@ export const MODULE_KEYS = {
 
   // Composers
   LAYER_1_COMPOSER: 'layer-1-composer',
+  DECISION_MAKER_BRAND_COMPOSER: 'decision-maker-brand-composer',
+  REVENUE_SIGNAL_COMPOSER: 'revenue-signal-composer',
+  LINKEDIN_ACTIVITY_COMPOSER: 'linkedin-activity-composer',
+  COMPETITOR_MENTIONS_COMPOSER: 'competitor-mentions-composer',
+  HIRING_SIGNALS_COMPOSER: 'hiring-signals-composer',
+  TOPIC_THEMES_COMPOSER: 'topic-themes-composer',
+  TONE_SIGNALS_COMPOSER: 'tone-signals-composer',
+  COLLEAGUE_NETWORK_COMPOSER: 'colleague-network-composer',
+  EXTERNAL_SOCIALS_COMPOSER: 'external-socials-composer',
+  EVENT_ATTENDANCE_COMPOSER: 'event-attendance-composer',
+  LOW_QUALITY_ENGAGEMENT_COMPOSER: 'low-quality-engagement-composer',
+  DESIGN_HELP_SIGNALS_COMPOSER: 'design-help-signals-composer',
+  FINAL_SUMMARY_COMPOSER: 'final-summary-composer',
 
   // Testing
   NOOP_MODULE: 'noop-module',
