@@ -31,6 +31,12 @@ export interface FlowRunStatusResult {
   flowRunId: number;
   flowKey: string;
   status: FlowRunStatus;
+  progress: number;
+  currentModules: Array<{
+    moduleRunId: number;
+    moduleKey: string;
+    startedAt: Date | null;
+  }>;
   finalSummary: Record<string, unknown> | null;
   summary: {
     total: number;
@@ -189,12 +195,27 @@ export class IndexerJobService {
         ? (finalSummaryClaim.ValueJson as Record<string, unknown>)
         : null;
 
+      // Calculate progress percentage
+      const progress =
+        summary.total > 0
+          ? Math.round((summary.completed.length / summary.total) * 100)
+          : 0;
+
+      // Get currently running modules
+      const currentModules = summary.running.map((run) => ({
+        moduleRunId: run.ModuleRunID,
+        moduleKey: run.ModuleKey,
+        startedAt: run.StartedAt || null,
+      }));
+
       return {
         error: null,
         data: {
           flowRunId: flowRun.FlowRunID,
           flowKey: flowRun.FlowKey,
           status: derivedStatus,
+          progress,
+          currentModules,
           finalSummary: finalSummaryValue,
           summary: {
             total: summary.total,
