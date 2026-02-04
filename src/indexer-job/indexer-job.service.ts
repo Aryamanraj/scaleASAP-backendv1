@@ -126,6 +126,10 @@ export class IndexerJobService {
         this.flowRunRepoService.get({ where: { FlowRunID: flowRunId } }, true),
       );
 
+      this.logger.info(
+        `IndexerJobService.getFlowRunStatus: Retrieved flow run [flowRunId=${flowRunId}, projectId=${flowRun.ProjectID}, personId=${flowRun.PersonID}]`,
+      );
+
       // Get all module runs for this flow run by checking _flowRunId in InputConfigJson
       const allModuleRuns = await Promisify<ModuleRun[]>(
         this.moduleRunRepoService.getAll(
@@ -140,28 +144,43 @@ export class IndexerJobService {
         ),
       );
 
+      this.logger.info(
+        `IndexerJobService.getFlowRunStatus: Found ${allModuleRuns.length} module runs for project/person`,
+      );
+
       // Filter to only module runs belonging to this flow
       const moduleRuns = allModuleRuns.filter(
         (mr) => mr.InputConfigJson?._flowRunId === flowRunId,
       );
 
+      this.logger.info(
+        `IndexerJobService.getFlowRunStatus: Filtered to ${moduleRuns.length} module runs for this flow`,
+      );
+
       const summary = this.getModuleRunSummary(moduleRuns);
       const derivedStatus = this.deriveFlowStatus(summary);
 
-      const finalSummaryClaim = await Promisify<Claim | null>(
-        this.claimRepoService.get(
-          {
-            where: {
-              ProjectID: flowRun.ProjectID,
-              PersonID: flowRun.PersonID,
-              ClaimType: CLAIM_KEY.INSIGHTS_FINAL_SUMMARY,
-              SupersededAt: IsNull(),
+      // Get final summary claim that was created by a module run from THIS flow
+      let finalSummaryClaim: Claim | null = null;
+      if (moduleRuns.length > 0) {
+        const moduleRunIds = moduleRuns.map((mr) => mr.ModuleRunID);
+        const allClaims = await Promisify<Claim[]>(
+          this.claimRepoService.getAll(
+            {
+              where: {
+                ProjectID: flowRun.ProjectID,
+                PersonID: flowRun.PersonID,
+                ClaimType: CLAIM_KEY.INSIGHTS_FINAL_SUMMARY,
+                ModuleRunID: In(moduleRunIds),
+                SupersededAt: IsNull(),
+              },
+              order: { CreatedAt: 'DESC' },
             },
-            order: { CreatedAt: 'DESC' },
-          },
-          false,
-        ),
-      );
+            false,
+          ),
+        );
+        finalSummaryClaim = allClaims.length > 0 ? allClaims[0] : null;
+      }
 
       await Promisify(
         this.flowRunRepoService.update(
