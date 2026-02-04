@@ -120,21 +120,24 @@ export class IndexerJobService {
         this.flowRunRepoService.get({ where: { FlowRunID: flowRunId } }, true),
       );
 
-      const scheduled = Array.isArray(flowRun.ModulesScheduledJson)
-        ? flowRun.ModulesScheduledJson
-        : [];
-      const moduleRunIds = scheduled
-        .map((item) => item?.moduleRunId)
-        .filter((id) => Number.isInteger(id));
+      // Get all module runs for this flow run by checking _flowRunId in InputConfigJson
+      const allModuleRuns = await Promisify<ModuleRun[]>(
+        this.moduleRunRepoService.getAll(
+          {
+            where: {
+              ProjectID: flowRun.ProjectID,
+              PersonID: flowRun.PersonID,
+            },
+            order: { CreatedAt: 'ASC' },
+          },
+          false,
+        ),
+      );
 
-      const moduleRuns = moduleRunIds.length
-        ? await Promisify<ModuleRun[]>(
-            this.moduleRunRepoService.getAll({
-              where: { ModuleRunID: In(moduleRunIds) },
-              order: { CreatedAt: 'ASC' },
-            }),
-          )
-        : [];
+      // Filter to only module runs belonging to this flow
+      const moduleRuns = allModuleRuns.filter(
+        (mr) => mr.InputConfigJson?._flowRunId === flowRunId,
+      );
 
       const summary = this.getModuleRunSummary(moduleRuns);
       const derivedStatus = this.deriveFlowStatus(summary);
