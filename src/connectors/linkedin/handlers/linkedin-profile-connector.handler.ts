@@ -113,28 +113,20 @@ export class LinkedinProfileConnectorHandler {
       const profileData = firstResult.data;
       const personUpdateData: any = {};
 
-      if (profileData.firstName)
+      if (profileData.firstName) {
         personUpdateData.FirstName = profileData.firstName;
-      if (profileData.lastName)
+      }
+      if (profileData.lastName) {
         personUpdateData.LastName = profileData.lastName;
-      if (profileData.fullName)
-        personUpdateData.FullName = profileData.fullName;
-      if (profileData.headline)
+      }
+      if (profileData.fullName) {
+        personUpdateData.PrimaryDisplayName = profileData.fullName;
+      }
+      if (profileData.headline) {
         personUpdateData.Headline = profileData.headline;
-      if (profileData.profileImage)
-        personUpdateData.ProfilePhotoUrl = profileData.profileImage;
-      if (profileData.profileUrn)
+      }
+      if (profileData.profileUrn) {
         personUpdateData.ExternalUrn = profileData.profileUrn;
-      if (profileData.location)
-        personUpdateData.Location = profileData.location;
-
-      // Current position info
-      if (profileData.experience && profileData.experience.length > 0) {
-        const currentPosition = profileData.experience[0];
-        if (currentPosition.title)
-          personUpdateData.CurrentTitle = currentPosition.title;
-        if (currentPosition.company)
-          personUpdateData.CurrentCompany = currentPosition.company;
       }
 
       if (Object.keys(personUpdateData).length > 0) {
