@@ -59,6 +59,7 @@ erDiagram
     Campaigns ||--o{ CampaignActivities : "logs"
     Campaigns ||--o{ OutreachMessages : "sends"
     Leads ||--o{ OutreachMessages : "receives"
+    Leads ||--o{ GeneratedMessages : "has"
     ModuleRuns ||--o{ Documents : "produces"
     ModuleRuns ||--o{ Claims : "generates"
     ModuleRuns ||--o{ LayerSnapshots : "creates"
@@ -366,6 +367,20 @@ erDiagram
         timestamptz SentAt
         timestamptz OpenedAt
         timestamptz RepliedAt
+        timestamptz CreatedAt
+        timestamptz UpdatedAt
+    }
+
+    GeneratedMessages {
+        int GeneratedMessageID PK
+        bigint LeadID FK
+        enum Platform "LINKEDIN, EMAIL"
+        enum MessageType "CONNECTION_REQUEST, FOLLOW_UP_DM, EMAIL_COLD, EMAIL_FOLLOW_UP"
+        text MessageContent
+        varchar Subject "nullable, for emails"
+        text PersonalizationNote
+        boolean IsUsed
+        int Rating "nullable, 1-5"
         timestamptz CreatedAt
         timestamptz UpdatedAt
     }

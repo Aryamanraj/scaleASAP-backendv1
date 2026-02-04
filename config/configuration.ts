@@ -14,6 +14,8 @@ export default () => {
     ADMIN_API_KEY: process.env.ADMIN_API_KEY,
     JWT_SECRET: process.env.JWT_SECRET || 'default-secret-change-in-production',
     APIFY_TOKEN: process.env.APIFY_TOKEN,
+    LINKEDIN_SCRAPER_BASE_URL:
+      process.env.LINKEDIN_SCRAPER_BASE_URL || 'http://localhost:3001',
     // AI Provider Configuration
     ai: {
       openai: {
@@ -26,6 +28,7 @@ export default () => {
       },
     },
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    MEGALLM_API_KEY: process.env.MEGALLM_API_KEY,
     // Supabase configuration for frontend-v1 auth integration
     supabase: {
       jwtSecret: process.env.SUPABASE_JWT_SECRET,
