@@ -25,6 +25,7 @@ import { CampaignModule } from '../campaign/campaign.module';
 import { LeadModule } from '../lead/lead.module';
 import { AsyncJobModule } from '../async-job/async-job.module';
 import { OnboardingModule } from '../onboarding/onboarding.module';
+import { IndexerJobModule } from '../indexer-job/indexer-job.module';
 
 @Module({
   imports: [
@@ -90,6 +91,7 @@ import { OnboardingModule } from '../onboarding/onboarding.module';
     LeadModule,
     AsyncJobModule,
     OnboardingModule,
+    IndexerJobModule,
   ],
   controllers: [],
   providers: [],
