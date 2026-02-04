@@ -13,6 +13,7 @@ export interface TopicThemesEvidence {
     'profileUrl' | 'profileUrn' | 'fullName' | 'headline' | 'about'
   >;
   recentPosts: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
+  recentReposts?: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
 }
 
 const SYSTEM_PROMPT = `You are a topic modeling analyst. Cluster posts into themes and label each theme.
@@ -24,6 +25,7 @@ export function buildTopicThemesPrompt(evidence: TopicThemesEvidence): {
 } {
   const profile = evidence.profile || ({} as TopicThemesEvidence['profile']);
   const posts = evidence.recentPosts || [];
+  const reposts = evidence.recentReposts || [];
 
   const userPrompt = `Cluster posts into themes and label each theme.
 
@@ -47,6 +49,21 @@ ${
         )
         .join('\n')
     : 'No posts provided'
+}
+
+Recent Reposts (limited, treat as secondary topic signals):
+${
+  reposts.length > 0
+    ? reposts
+        .slice(0, 40)
+        .map(
+          (post, idx) =>
+            `${idx + 1}. ${post.createdAt || 'unknown'} | ${
+              post.postUrl || 'no-url'
+            } | ${(post.text || '').substring(0, 240)}`,
+        )
+        .join('\n')
+    : 'No reposts provided'
 }
 
 Return JSON with this exact schema:

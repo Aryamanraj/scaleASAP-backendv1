@@ -28,6 +28,7 @@ export interface ProfileData {
   honors?: HonorItem[];
   volunteer?: VolunteerItem[];
   recentPosts?: RecentPost[];
+  recentReposts?: RecentPost[];
 }
 
 export interface ExperienceItem {

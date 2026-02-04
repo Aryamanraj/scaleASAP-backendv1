@@ -13,6 +13,7 @@ export interface EventAttendanceEvidence {
     'profileUrl' | 'profileUrn' | 'fullName' | 'headline' | 'about'
   >;
   recentPosts: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
+  recentReposts?: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
 }
 
 const SYSTEM_PROMPT = `You are an events analyst. Extract event attendance mentions with timeframe and role.
@@ -25,6 +26,7 @@ export function buildEventAttendancePrompt(evidence: EventAttendanceEvidence): {
   const profile =
     evidence.profile || ({} as EventAttendanceEvidence['profile']);
   const posts = evidence.recentPosts || [];
+  const reposts = evidence.recentReposts || [];
 
   const userPrompt = `Extract event attendance mentions with timeframe and role.
 
@@ -48,6 +50,21 @@ ${
         )
         .join('\n')
     : 'No posts provided'
+}
+
+Recent Reposts (limited, reposts alone do NOT confirm attendance):
+${
+  reposts.length > 0
+    ? reposts
+        .slice(0, 40)
+        .map(
+          (post, idx) =>
+            `${idx + 1}. ${post.createdAt || 'unknown'} | ${
+              post.postUrl || 'no-url'
+            } | ${(post.text || '').substring(0, 240)}`,
+        )
+        .join('\n')
+    : 'No reposts provided'
 }
 
 Return JSON with this exact schema:

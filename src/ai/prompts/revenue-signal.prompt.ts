@@ -23,6 +23,7 @@ export interface RevenueSignalEvidence {
     | 'volunteer'
   >;
   recentPosts: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
+  recentReposts?: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
   companyInfo?: {
     name?: string;
     domain?: string;
@@ -39,6 +40,7 @@ export function buildRevenueSignalPrompt(evidence: RevenueSignalEvidence): {
 } {
   const profile = evidence.profile || ({} as RevenueSignalEvidence['profile']);
   const posts = evidence.recentPosts || [];
+  const reposts = evidence.recentReposts || [];
   const company = evidence.companyInfo || {};
 
   const userPrompt = `Analyze the LinkedIn profile and posts for revenue signals.
@@ -69,6 +71,21 @@ ${
         )
         .join('\n')
     : 'No posts provided'
+}
+
+Recent Reposts (ignore for revenue inference unless explicitly about their own company):
+${
+  reposts.length > 0
+    ? reposts
+        .slice(0, 10)
+        .map(
+          (post, idx) =>
+            `${idx + 1}. ${post.createdAt || 'unknown'} | ${
+              post.postUrl || 'no-url'
+            } | ${(post.text || '').substring(0, 240)}`,
+        )
+        .join('\n')
+    : 'No reposts provided'
 }
 
 Return JSON with this exact schema:

@@ -23,6 +23,7 @@ export interface DecisionMakerBrandEvidence {
     | 'volunteer'
   >;
   recentPosts: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
+  recentReposts?: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
 }
 
 const SYSTEM_PROMPT = `You are a rigorous B2B analyst. Determine if the person is a decision maker who cares about brand/positioning.
@@ -34,6 +35,7 @@ export function buildDecisionMakerBrandPrompt(
   const profile =
     evidence.profile || ({} as DecisionMakerBrandEvidence['profile']);
   const posts = evidence.recentPosts || [];
+  const reposts = evidence.recentReposts || [];
 
   const userPrompt = `Analyze this LinkedIn profile and posts for decision-maker + brand/positioning signals.
 
@@ -58,6 +60,21 @@ ${
         )
         .join('\n')
     : 'No posts provided'
+}
+
+Recent Reposts (limited, use as secondary signals only):
+${
+  reposts.length > 0
+    ? reposts
+        .slice(0, 20)
+        .map(
+          (post, idx) =>
+            `${idx + 1}. ${post.createdAt || 'unknown'} | ${
+              post.postUrl || 'no-url'
+            } | ${(post.text || '').substring(0, 280)}`,
+        )
+        .join('\n')
+    : 'No reposts provided'
 }
 
 Return JSON with this exact schema:

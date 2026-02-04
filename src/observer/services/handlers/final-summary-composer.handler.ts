@@ -86,6 +86,9 @@ export class FinalSummaryComposerHandler {
       const recentPosts = Array.isArray(postsPayload)
         ? postsPayload
         : postsPayload?.recentPosts || [];
+      const recentReposts = Array.isArray(profilePayload?.recentReposts)
+        ? profilePayload.recentReposts
+        : postsPayload?.recentReposts || [];
 
       const claims = await Promisify<Claim[]>(
         this.claimRepoService.getAll(
@@ -112,6 +115,11 @@ export class FinalSummaryComposerHandler {
       const evidence: FinalSummaryEvidence = {
         profile: profilePayload || {},
         recentPosts: recentPosts.map((post: any) => ({
+          postUrl: post.postUrl || post.url || null,
+          text: post.text || post.content || null,
+          createdAt: post.createdAt || null,
+        })),
+        recentReposts: recentReposts.map((post: any) => ({
           postUrl: post.postUrl || post.url || null,
           text: post.text || post.content || null,
           createdAt: post.createdAt || null,

@@ -18,6 +18,7 @@ export interface LinkedinActivityEvidence {
     | 'experience'
   >;
   recentPosts: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
+  recentReposts?: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
 }
 
 const SYSTEM_PROMPT = `You are a social activity analyst. Assess how active this person is on LinkedIn.
@@ -32,6 +33,7 @@ export function buildLinkedinActivityPrompt(
   const profile =
     evidence.profile || ({} as LinkedinActivityEvidence['profile']);
   const posts = evidence.recentPosts || [];
+  const reposts = evidence.recentReposts || [];
 
   const userPrompt = `Assess how active this person is on LinkedIn.
 
@@ -56,6 +58,21 @@ ${
         )
         .join('\n')
     : 'No posts provided'
+}
+
+Recent Reposts (limited, count as activity but lower weight than original posts):
+${
+  reposts.length > 0
+    ? reposts
+        .slice(0, 30)
+        .map(
+          (post, idx) =>
+            `${idx + 1}. ${post.createdAt || 'unknown'} | ${
+              post.postUrl || 'no-url'
+            } | ${(post.text || '').substring(0, 200)}`,
+        )
+        .join('\n')
+    : 'No reposts provided'
 }
 
 Return JSON with this exact schema:

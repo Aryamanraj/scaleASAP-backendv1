@@ -13,6 +13,7 @@ export interface ExternalSocialsEvidence {
     'profileUrl' | 'profileUrn' | 'fullName' | 'headline' | 'about'
   >;
   recentPosts: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
+  recentReposts?: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
 }
 
 const SYSTEM_PROMPT = `You are a digital footprint analyst. Extract external socials, websites, and emails.
@@ -25,6 +26,7 @@ export function buildExternalSocialsPrompt(evidence: ExternalSocialsEvidence): {
   const profile =
     evidence.profile || ({} as ExternalSocialsEvidence['profile']);
   const posts = evidence.recentPosts || [];
+  const reposts = evidence.recentReposts || [];
 
   const userPrompt = `Extract external socials (Twitter, Instagram, GitHub), websites, and emails from the content.
 
@@ -48,6 +50,21 @@ ${
         )
         .join('\n')
     : 'No posts provided'
+}
+
+Recent Reposts (limited, include for socials/links but lower confidence):
+${
+  reposts.length > 0
+    ? reposts
+        .slice(0, 40)
+        .map(
+          (post, idx) =>
+            `${idx + 1}. ${post.createdAt || 'unknown'} | ${
+              post.postUrl || 'no-url'
+            } | ${(post.text || '').substring(0, 240)}`,
+        )
+        .join('\n')
+    : 'No reposts provided'
 }
 
 Return JSON with this exact schema:

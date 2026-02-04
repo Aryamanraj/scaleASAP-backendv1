@@ -13,6 +13,7 @@ export interface LowQualityEngagementEvidence {
     'profileUrl' | 'profileUrn' | 'fullName' | 'headline'
   >;
   recentPosts: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
+  recentReposts?: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
 }
 
 const SYSTEM_PROMPT = `You are a behavior analyst. Identify low-quality engagement patterns.
@@ -27,6 +28,7 @@ export function buildLowQualityEngagementPrompt(
   const profile =
     evidence.profile || ({} as LowQualityEngagementEvidence['profile']);
   const posts = evidence.recentPosts || [];
+  const reposts = evidence.recentReposts || [];
 
   const userPrompt = `Identify low-quality engagement patterns (one-word comments, freebies, link drops).
 
@@ -49,6 +51,21 @@ ${
         )
         .join('\n')
     : 'No posts provided'
+}
+
+Recent Reposts (ignore for low-quality engagement analysis):
+${
+  reposts.length > 0
+    ? reposts
+        .slice(0, 40)
+        .map(
+          (post, idx) =>
+            `${idx + 1}. ${post.createdAt || 'unknown'} | ${
+              post.postUrl || 'no-url'
+            } | ${(post.text || '').substring(0, 240)}`,
+        )
+        .join('\n')
+    : 'No reposts provided'
 }
 
 Return JSON with this exact schema:

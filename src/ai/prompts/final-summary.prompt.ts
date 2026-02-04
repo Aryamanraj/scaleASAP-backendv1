@@ -13,6 +13,7 @@ export interface FinalSummaryEvidence {
     'profileUrl' | 'profileUrn' | 'fullName' | 'headline' | 'about'
   >;
   recentPosts: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
+  recentReposts?: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
   claims: Array<{ claimType: string; value: any }>;
 }
 
@@ -25,6 +26,7 @@ export function buildFinalSummaryPrompt(evidence: FinalSummaryEvidence): {
 } {
   const profile = evidence.profile || ({} as FinalSummaryEvidence['profile']);
   const posts = evidence.recentPosts || [];
+  const reposts = evidence.recentReposts || [];
   const claims = evidence.claims || [];
 
   const userPrompt = `Generate a structured final summary for a design-agency style lead profile.
@@ -50,6 +52,21 @@ ${
         )
         .join('\n')
     : 'No posts provided'
+}
+
+Recent Reposts (limited, treat as secondary signals only):
+${
+  reposts.length > 0
+    ? reposts
+        .slice(0, 20)
+        .map(
+          (post, idx) =>
+            `${idx + 1}. ${post.createdAt || 'unknown'} | ${
+              post.postUrl || 'no-url'
+            } | ${(post.text || '').substring(0, 240)}`,
+        )
+        .join('\n')
+    : 'No reposts provided'
 }
 
 Claims (latest):

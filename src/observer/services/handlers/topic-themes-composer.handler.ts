@@ -68,10 +68,18 @@ export class TopicThemesComposerHandler {
       const recentPosts = Array.isArray(postsPayload)
         ? postsPayload
         : postsPayload?.recentPosts || [];
+      const recentReposts = Array.isArray(profilePayload?.recentReposts)
+        ? profilePayload.recentReposts
+        : postsPayload?.recentReposts || [];
 
       const evidence: TopicThemesEvidence = {
         profile: profilePayload || {},
         recentPosts: recentPosts.map((post: any) => ({
+          postUrl: post.postUrl || post.url || null,
+          text: post.text || post.content || null,
+          createdAt: post.createdAt || null,
+        })),
+        recentReposts: recentReposts.map((post: any) => ({
           postUrl: post.postUrl || post.url || null,
           text: post.text || post.content || null,
           createdAt: post.createdAt || null,

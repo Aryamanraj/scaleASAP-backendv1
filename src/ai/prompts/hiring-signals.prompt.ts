@@ -18,6 +18,7 @@ export interface HiringSignalsEvidence {
     | 'experience'
   >;
   recentPosts: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
+  recentReposts?: Array<Pick<RecentPost, 'postUrl' | 'text' | 'createdAt'>>;
 }
 
 const SYSTEM_PROMPT = `You are a hiring signals analyst. Identify hiring signals, team welcomes, and referral requests.
@@ -29,6 +30,7 @@ export function buildHiringSignalsPrompt(evidence: HiringSignalsEvidence): {
 } {
   const profile = evidence.profile || ({} as HiringSignalsEvidence['profile']);
   const posts = evidence.recentPosts || [];
+  const reposts = evidence.recentReposts || [];
 
   const userPrompt = `Identify hiring-related signals from the profile and posts.
 
@@ -52,6 +54,21 @@ ${
         )
         .join('\n')
     : 'No posts provided'
+}
+
+Recent Reposts (limited, indicate interest but NOT direct hiring unless stated):
+${
+  reposts.length > 0
+    ? reposts
+        .slice(0, 30)
+        .map(
+          (post, idx) =>
+            `${idx + 1}. ${post.createdAt || 'unknown'} | ${
+              post.postUrl || 'no-url'
+            } | ${(post.text || '').substring(0, 240)}`,
+        )
+        .join('\n')
+    : 'No reposts provided'
 }
 
 Return JSON with this exact schema:
