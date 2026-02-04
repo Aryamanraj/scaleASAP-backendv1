@@ -247,15 +247,15 @@ export class LinkedinPostsNormalizerService {
       }
     }
 
-    if (!postedAt && rawPost.createdAt) {
-      try {
-        postedAt = new Date(rawPost.createdAt);
-        if (isNaN(postedAt.getTime())) {
-          postedAt = null;
-        }
-      } catch {
-        postedAt = null;
-      }
+    if (!postedAt) {
+      postedAt = this.parsePostedAtValue(
+        rawPost.createdAt ??
+          rawPost.created_at ??
+          rawPost.postedAt ??
+          rawPost.timestamp ??
+          rawPost.time ??
+          null,
+      );
     }
 
     // Extract text content
@@ -348,5 +348,36 @@ export class LinkedinPostsNormalizerService {
       Fingerprint: fingerprint,
       IsValid: true,
     };
+  }
+
+  private parsePostedAtValue(value: any): Date | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value;
+    }
+
+    if (typeof value === 'number') {
+      const millis = value < 10_000_000_000 ? value * 1000 : value;
+      const parsed = new Date(millis);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    const asString = String(value).trim();
+    if (!asString) {
+      return null;
+    }
+
+    const numeric = Number(asString);
+    if (!Number.isNaN(numeric)) {
+      const millis = numeric < 10_000_000_000 ? numeric * 1000 : numeric;
+      const parsed = new Date(millis);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    const parsed = new Date(asString);
+    return isNaN(parsed.getTime()) ? null : parsed;
   }
 }
