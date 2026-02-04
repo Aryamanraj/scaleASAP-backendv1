@@ -287,6 +287,10 @@ export class LinkedinCoreIdentityEnricherService {
       basic?.fullName ||
       basic?.full_name ||
       root?.fullName ||
+      root?.full_name ||
+      (root?.firstName && root?.lastName
+        ? `${root.firstName} ${root.lastName}`
+        : null) ||
       root?.name ||
       root?.profile?.fullName ||
       root?.profile?.name ||
@@ -295,8 +299,10 @@ export class LinkedinCoreIdentityEnricherService {
     if (fullName) {
       return {
         fullName,
-        firstName: basic?.first_name || basic?.firstName || undefined,
-        lastName: basic?.last_name || basic?.lastName || undefined,
+        firstName:
+          basic?.first_name || basic?.firstName || root?.firstName || undefined,
+        lastName:
+          basic?.last_name || basic?.lastName || root?.lastName || undefined,
       };
     }
 
@@ -305,6 +311,14 @@ export class LinkedinCoreIdentityEnricherService {
     const lastName = basic?.last_name || basic?.lastName;
     if (firstName && lastName) {
       return { fullName: `${firstName} ${lastName}`, firstName, lastName };
+    }
+
+    if (root?.firstName && root?.lastName) {
+      return {
+        fullName: `${root.firstName} ${root.lastName}`,
+        firstName: root.firstName,
+        lastName: root.lastName,
+      };
     }
 
     return null;
@@ -384,8 +398,16 @@ export class LinkedinCoreIdentityEnricherService {
     const school = edu?.schoolName || edu?.school || edu?.institution || '';
     const degree = edu?.degreeName || edu?.degree || '';
     const field = edu?.fieldOfStudy || edu?.field || '';
-    const startYear = edu?.dateRange?.start?.year || edu?.startYear || null;
-    const endYear = edu?.dateRange?.end?.year || edu?.endYear || null;
+    const startYear =
+      edu?.dateRange?.start?.year ||
+      edu?.startYear ||
+      this.extractYearFromDateString((edu as any)?.startDate) ||
+      null;
+    const endYear =
+      edu?.dateRange?.end?.year ||
+      edu?.endYear ||
+      this.extractYearFromDateString((edu as any)?.endDate) ||
+      null;
     const description = edu?.description || '';
 
     const fingerprint = `${school}|${degree}|${field}|${startYear ?? ''}|${
@@ -468,6 +490,14 @@ export class LinkedinCoreIdentityEnricherService {
       return `${dateObj.year}-01-01`;
     }
     return null;
+  }
+
+  private extractYearFromDateString(
+    dateStr: string | null | undefined,
+  ): number | null {
+    if (!dateStr) return null;
+    const match = String(dateStr).match(/\b(19|20)\d{2}\b/);
+    return match ? Number(match[0]) : null;
   }
 
   private calculateDurationMonths(

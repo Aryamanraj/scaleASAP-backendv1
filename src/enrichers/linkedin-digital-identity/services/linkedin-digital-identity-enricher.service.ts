@@ -134,8 +134,19 @@ export class LinkedinDigitalIdentityEnricherService {
       );
 
       const root = Array.isArray(payload) ? payload[0] : payload;
-      const name = root?.basic_info?.fullname || root?.name || '';
-      const company = root?.experience?.[0]?.companyName || '';
+      const name =
+        root?.basic_info?.fullname ||
+        root?.basic_info?.fullName ||
+        root?.fullName ||
+        root?.name ||
+        (root?.firstName && root?.lastName
+          ? `${root.firstName} ${root.lastName}`
+          : '') ||
+        '';
+      const company =
+        root?.experience?.[0]?.companyName ||
+        root?.experience?.[0]?.company ||
+        '';
 
       if (!name) {
         this.logger.info(
@@ -229,7 +240,10 @@ Return JSON:
 
       const root = Array.isArray(payload) ? payload[0] : payload;
       const profilePhotoUrl =
-        root?.basic_info?.profile_pic_url || root?.profilePictureUrl || '';
+        root?.basic_info?.profile_pic_url ||
+        root?.profilePictureUrl ||
+        root?.profileImage ||
+        '';
 
       if (!profilePhotoUrl) {
         this.logger.info(
@@ -322,8 +336,10 @@ Return JSON:
       );
 
       const root = Array.isArray(payload) ? payload[0] : payload;
-      const headline = root?.basic_info?.headline || root?.headline || '';
-      const summary = root?.basic_info?.summary || root?.summary || '';
+      const headline =
+        root?.basic_info?.headline || root?.headline || root?.title || '';
+      const summary =
+        root?.basic_info?.summary || root?.summary || root?.about || '';
 
       if (!headline && !summary) {
         this.logger.info(
@@ -420,7 +436,10 @@ Return JSON:
 
       const root = Array.isArray(payload) ? payload[0] : payload;
       const websites = root?.basic_info?.websites || root?.websites || [];
-      const company = root?.experience?.[0]?.companyName || '';
+      const company =
+        root?.experience?.[0]?.companyName ||
+        root?.experience?.[0]?.company ||
+        '';
 
       if (websites.length === 0 && !company) {
         this.logger.info(

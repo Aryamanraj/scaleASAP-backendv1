@@ -160,7 +160,7 @@ export class LinkedinPostsChunkEvidenceExtractorService {
             where: {
               ContentChunkID: chunk.ContentChunkID,
             },
-            relations: ['PostItem'],
+            relations: { PostItem: true },
             take: maxPosts,
           },
           false,

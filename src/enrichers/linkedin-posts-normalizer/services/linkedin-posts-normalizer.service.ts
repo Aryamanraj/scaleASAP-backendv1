@@ -101,6 +101,17 @@ export class LinkedinPostsNormalizerService {
 
       if (Array.isArray(rawJson)) {
         postsArray = rawJson;
+      } else if (rawJson?.recentPosts && Array.isArray(rawJson.recentPosts)) {
+        postsArray = rawJson.recentPosts;
+      } else if (
+        rawJson?.data?.recentPosts &&
+        Array.isArray(rawJson.data.recentPosts)
+      ) {
+        postsArray = rawJson.data.recentPosts;
+      } else if (rawJson?.results && Array.isArray(rawJson.results)) {
+        postsArray = rawJson.results.flatMap(
+          (result: any) => result?.data?.recentPosts || [],
+        );
       } else if (rawJson?.items && Array.isArray(rawJson.items)) {
         postsArray = rawJson.items;
       } else if (rawJson?.posts && Array.isArray(rawJson.posts)) {
@@ -204,13 +215,14 @@ export class LinkedinPostsNormalizerService {
   ): Partial<PostItem> {
     // Extract PlatformPostID - priority order
     const platformPostId =
+      rawPost.activityUrn ||
       rawPost.urn?.ugcPost_urn ||
       rawPost.full_urn ||
       rawPost.urn?.activity_urn ||
       null;
 
     // Extract Permalink - canonical LinkedIn activity URL
-    const permalink = rawPost.url || null;
+    const permalink = rawPost.postUrl || rawPost.url || null;
 
     // Parse PostedAt from Apify structure
     let postedAt: Date | null = null;
@@ -227,6 +239,17 @@ export class LinkedinPostsNormalizerService {
     } else if (rawPost.posted_at?.date) {
       try {
         postedAt = new Date(rawPost.posted_at.date);
+        if (isNaN(postedAt.getTime())) {
+          postedAt = null;
+        }
+      } catch {
+        postedAt = null;
+      }
+    }
+
+    if (!postedAt && rawPost.createdAt) {
+      try {
+        postedAt = new Date(rawPost.createdAt);
         if (isNaN(postedAt.getTime())) {
           postedAt = null;
         }
@@ -289,6 +312,18 @@ export class LinkedinPostsNormalizerService {
       if (rawPost.posted_at?.relative) {
         engagement.postedAtRelative = rawPost.posted_at.relative;
       }
+    } else if (
+      rawPost.numLikes !== undefined ||
+      rawPost.numComments !== undefined ||
+      rawPost.numShares !== undefined ||
+      rawPost.reactionTypeCounts !== undefined
+    ) {
+      engagement = {
+        likeCount: rawPost.numLikes ?? 0,
+        commentCount: rawPost.numComments ?? 0,
+        repostCount: rawPost.numShares ?? 0,
+        reactionTypeCounts: rawPost.reactionTypeCounts || [],
+      };
     }
 
     // Compute fingerprint - stable identifier
