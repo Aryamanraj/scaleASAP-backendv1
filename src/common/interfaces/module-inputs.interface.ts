@@ -22,6 +22,63 @@ export interface Layer1ComposerInput {
   schemaVersion: string;
 }
 
+export interface DecisionMakerBrandComposerInput {
+  schemaVersion?: string;
+}
+
+export interface RevenueSignalComposerInput {
+  schemaVersion?: string;
+  companyInfo?: {
+    name?: string;
+    domain?: string;
+    linkedinUrl?: string;
+  };
+}
+
+export interface LinkedinActivityComposerInput {
+  schemaVersion?: string;
+}
+
+export interface CompetitorMentionsComposerInput {
+  schemaVersion?: string;
+}
+
+export interface HiringSignalsComposerInput {
+  schemaVersion?: string;
+}
+
+export interface TopicThemesComposerInput {
+  schemaVersion?: string;
+}
+
+export interface ToneSignalsComposerInput {
+  schemaVersion?: string;
+}
+
+export interface ColleagueNetworkComposerInput {
+  schemaVersion?: string;
+}
+
+export interface ExternalSocialsComposerInput {
+  schemaVersion?: string;
+}
+
+export interface EventAttendanceComposerInput {
+  schemaVersion?: string;
+}
+
+export interface LowQualityEngagementComposerInput {
+  schemaVersion?: string;
+}
+
+export interface DesignHelpSignalsComposerInput {
+  schemaVersion?: string;
+}
+
+export interface FinalSummaryComposerInput {
+  schemaVersion?: string;
+}
+
 /**
  * Core Identity Payload Structure
  * Expected structure in Document payload for manual documents

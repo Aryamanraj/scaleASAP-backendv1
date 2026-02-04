@@ -30,6 +30,20 @@ export enum CLAIM_KEY {
   DIGITAL_DOMAIN_OWNERSHIP = 'digital_identity.domain_ownership',
 
   PERSONALITY_ACTIVE_TIMES = 'personality.active_times',
+
+  INSIGHTS_DECISION_MAKER_BRAND = 'insights.decision_maker_brand',
+  INSIGHTS_REVENUE_SIGNAL = 'insights.revenue_signal',
+  INSIGHTS_LINKEDIN_ACTIVITY = 'insights.linkedin_activity',
+  INSIGHTS_COMPETITOR_MENTIONS = 'insights.competitor_mentions',
+  INSIGHTS_HIRING_SIGNALS = 'insights.hiring_signals',
+  INSIGHTS_TOPIC_THEMES = 'insights.topic_themes',
+  INSIGHTS_TONE_SIGNALS = 'insights.tone_signals',
+  INSIGHTS_COLLEAGUE_NETWORK = 'insights.colleague_network',
+  INSIGHTS_EXTERNAL_SOCIALS = 'insights.external_socials',
+  INSIGHTS_EVENT_ATTENDANCE = 'insights.event_attendance',
+  INSIGHTS_LOW_QUALITY_ENGAGEMENT = 'insights.low_quality_engagement',
+  INSIGHTS_DESIGN_HELP_SIGNALS = 'insights.design_help_signals',
+  INSIGHTS_FINAL_SUMMARY = 'insights.final_summary',
 }
 
 /**
