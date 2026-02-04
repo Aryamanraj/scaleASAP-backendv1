@@ -9,6 +9,7 @@ import { ModuleDispatcherService } from '../services/module-dispatcher.service';
 import { Promisify } from '../../common/helpers/promisifier';
 import { ModuleRun } from '../../repo/entities/module-run.entity';
 import { ModuleRunStatus } from '../../common/constants/entity.constants';
+import { IndexerFlowProcessorService } from '../../indexer-job/indexer-flow-processor.service';
 
 @Processor(QueueNames.MODULE_RUNS)
 export class ModuleRunConsumer {
@@ -16,6 +17,7 @@ export class ModuleRunConsumer {
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
     private moduleRunRepoService: ModuleRunRepoService,
     private moduleDispatcherService: ModuleDispatcherService,
+    private indexerFlowProcessorService: IndexerFlowProcessorService,
   ) {}
 
   @Process(QUEUE_JOB_NAMES.EXECUTE_MODULE_RUN)
@@ -69,6 +71,17 @@ export class ModuleRunConsumer {
         `ModuleRunConsumer: Module run completed successfully [moduleRunId: ${moduleRunId}]`,
       );
 
+      // Check if this module run belongs to a flow run and progress if needed
+      const flowRunId = moduleRun.InputConfigJson?._flowRunId;
+      if (flowRunId) {
+        this.logger.info(
+          `ModuleRunConsumer: Checking flow progress [flowRunId: ${flowRunId}]`,
+        );
+        await Promisify(
+          this.indexerFlowProcessorService.checkAndProgressStage(flowRunId),
+        );
+      }
+
       job.progress(100);
     } catch (error) {
       this.logger.error(
@@ -78,6 +91,14 @@ export class ModuleRunConsumer {
 
       // Attempt to update status to FAILED
       try {
+        // Fetch moduleRun again to get InputConfigJson
+        const failedModuleRun = await Promisify<ModuleRun>(
+          this.moduleRunRepoService.get(
+            { where: { ModuleRunID: moduleRunId } },
+            false,
+          ),
+        );
+
         await Promisify(
           this.moduleRunRepoService.update(
             { ModuleRunID: moduleRunId },
@@ -91,6 +112,17 @@ export class ModuleRunConsumer {
             },
           ),
         );
+
+        // Check if this module run belongs to a flow run and handle failure
+        const flowRunId = failedModuleRun?.InputConfigJson?._flowRunId;
+        if (flowRunId) {
+          this.logger.info(
+            `ModuleRunConsumer: Checking flow progress after failure [flowRunId: ${flowRunId}]`,
+          );
+          await Promisify(
+            this.indexerFlowProcessorService.checkAndProgressStage(flowRunId),
+          );
+        }
       } catch (updateError) {
         this.logger.error(
           `ModuleRunConsumer: Failed to update module run status [moduleRunId: ${moduleRunId}]`,
