@@ -31,6 +31,45 @@ const SYSTEM_PROMPT = `You are a strict profile filter evaluator.
 You must follow the filter instructions exactly.
 Return ONLY valid JSON with no extra text or code fences.`;
 
+function summarizeExperience(experience: Array<any> | undefined): {
+  totalMonths: number;
+  itemsCounted: number;
+} {
+  if (!experience || experience.length === 0) {
+    return { totalMonths: 0, itemsCounted: 0 };
+  }
+
+  const parseDurationText = (text: string | undefined | null): number => {
+    if (!text) {
+      return 0;
+    }
+    const yearsMatch = text.match(/(\d+)\s*(yr|yrs|year|years)/i);
+    const monthsMatch = text.match(/(\d+)\s*(mo|mos|month|months)/i);
+    const years = yearsMatch ? Number(yearsMatch[1]) : 0;
+    const months = monthsMatch ? Number(monthsMatch[1]) : 0;
+    return years * 12 + months;
+  };
+
+  let totalMonths = 0;
+  let itemsCounted = 0;
+
+  for (const exp of experience) {
+    const durationMonths = parseDurationText(exp?.duration);
+    let months = durationMonths;
+
+    if (!months) {
+      months = parseDurationText(exp?.company);
+    }
+
+    if (months > 0) {
+      totalMonths += months;
+      itemsCounted += 1;
+    }
+  }
+
+  return { totalMonths, itemsCounted };
+}
+
 export function buildFlowFilterPrompt(evidence: FlowFilterEvidence): {
   systemPrompt: string;
   userPrompt: string;
@@ -38,6 +77,9 @@ export function buildFlowFilterPrompt(evidence: FlowFilterEvidence): {
   const profile = evidence.profile || ({} as FlowFilterEvidence['profile']);
   const posts = evidence.recentPosts || [];
   const reposts = evidence.recentReposts || [];
+  const experienceSummary = summarizeExperience(profile.experience as any);
+  const totalYearsApprox = Math.floor(experienceSummary.totalMonths / 12);
+  const remainingMonths = experienceSummary.totalMonths % 12;
 
   const userPrompt = `Evaluate whether this profile should proceed to enrichment/composer stages.
 
@@ -53,6 +95,9 @@ Profile:
 - Experience Count: ${
     profile.experience?.length || 0
   } (count of entries, not total years)
+- Estimated Total Experience (sum of explicit durations only): ${totalYearsApprox} yrs ${remainingMonths} mos (based on ${
+    experienceSummary.itemsCounted
+  } entries with explicit durations)
 
 Experience Entries (limited):
 ${
