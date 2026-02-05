@@ -206,7 +206,7 @@ export class IndexerJobService {
             FailureReasonsJson: summary.failed.map((run) => ({
               moduleRunId: run.ModuleRunID,
               moduleKey: run.ModuleKey,
-              error: run.ErrorJson || null,
+              error: this.toPublicError(run.ErrorJson),
             })),
             FinalSummaryJson: finalSummaryClaim?.ValueJson || null,
           },
@@ -251,7 +251,7 @@ export class IndexerJobService {
             moduleRunId: run.ModuleRunID,
             moduleKey: run.ModuleKey,
             status: run.Status,
-            error: run.ErrorJson || null,
+            error: this.toPublicError(run.ErrorJson),
             startedAt: run.StartedAt || null,
             finishedAt: run.FinishedAt || null,
           })),
@@ -308,5 +308,20 @@ export class IndexerJobService {
     }
 
     return FlowRunStatus.QUEUED;
+  }
+
+  private toPublicError(errorJson: any): { message: string } | null {
+    if (!errorJson) {
+      return null;
+    }
+
+    const message =
+      typeof errorJson?.message === 'string'
+        ? errorJson.message
+        : typeof errorJson === 'string'
+        ? errorJson
+        : 'Unknown error';
+
+    return { message };
   }
 }
