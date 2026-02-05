@@ -157,6 +157,11 @@ export class LinkedinProfileConnectorHandler {
               evidence,
             },
           );
+          this.logger.info(
+            `LinkedinProfileConnectorHandler.execute: Flow filter evidence payload JSON=${JSON.stringify(
+              evidence,
+            )}`,
+          );
 
           const prompt = buildFlowFilterPrompt(evidence);
           this.logger.info(
@@ -167,6 +172,14 @@ export class LinkedinProfileConnectorHandler {
               systemPrompt: prompt.systemPrompt,
               userPrompt: prompt.userPrompt,
             },
+          );
+          this.logger.info(
+            `LinkedinProfileConnectorHandler.execute: Flow filter prompt payload JSON=${JSON.stringify(
+              {
+                systemPrompt: prompt.systemPrompt,
+                userPrompt: prompt.userPrompt,
+              },
+            )}`,
           );
           const aiResponse = await this.aiService.run({
             provider: AI_PROVIDER.OPENAI,
