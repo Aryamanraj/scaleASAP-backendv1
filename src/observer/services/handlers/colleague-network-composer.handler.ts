@@ -90,6 +90,22 @@ export class ColleagueNetworkComposerHandler {
       };
 
       const prompt = buildColleagueNetworkPrompt(evidence);
+      this.logger.info(
+        'ColleagueNetworkComposerHandler.execute: AI prompt payload',
+        {
+          moduleRunId: run.ModuleRunID,
+          systemPrompt: prompt.systemPrompt,
+          userPrompt: prompt.userPrompt,
+        },
+      );
+      this.logger.info(
+        `ColleagueNetworkComposerHandler.execute: AI prompt payload JSON=${JSON.stringify(
+          {
+            systemPrompt: prompt.systemPrompt,
+            userPrompt: prompt.userPrompt,
+          },
+        )}`,
+      );
 
       const aiResponse = await this.aiService.run({
         provider: AI_PROVIDER.OPENAI,
@@ -101,7 +117,25 @@ export class ColleagueNetworkComposerHandler {
         maxTokens: 500,
       });
 
-      const parsed = this.parseJsonResponse(aiResponse.rawText);
+      this.logger.info(
+        'ColleagueNetworkComposerHandler.execute: AI raw response',
+        {
+          moduleRunId: run.ModuleRunID,
+          rawText: aiResponse.rawText,
+        },
+      );
+      this.logger.info(
+        `ColleagueNetworkComposerHandler.execute: AI raw response JSON=${JSON.stringify(
+          { rawText: aiResponse.rawText },
+        )}`,
+      );
+
+      const parsed = await this.parseJsonResponseWithRetry(
+        aiResponse.rawText,
+        prompt.systemPrompt,
+        prompt.userPrompt,
+        run.ModuleRunID,
+      );
 
       const valueJsonWithMeta = {
         ...parsed,
@@ -160,6 +194,48 @@ export class ColleagueNetworkComposerHandler {
         return JSON.parse(match[0]);
       }
       throw error;
+    }
+  }
+
+  private async parseJsonResponseWithRetry(
+    rawText: string,
+    systemPrompt: string,
+    userPrompt: string,
+    moduleRunId: number,
+  ): Promise<any> {
+    try {
+      return this.parseJsonResponse(rawText);
+    } catch (error) {
+      this.logger.warn(
+        `ColleagueNetworkComposerHandler.execute: Invalid JSON response, retrying with follow-up prompt [moduleRunId=${moduleRunId}, error=${error.message}]`,
+      );
+
+      const followUpPrompt = `${userPrompt}\n\nYour previous response was invalid JSON. Fix it and return ONLY valid JSON with the same schema. Do not add commentary.\n\nInvalid response:\n${rawText}`;
+
+      const retryResponse = await this.aiService.run({
+        provider: AI_PROVIDER.OPENAI,
+        model: AI_MODEL.GPT_4O_MINI,
+        taskType: AI_TASK.COLLEAGUE_NETWORK_INFERENCE,
+        systemPrompt,
+        userPrompt: followUpPrompt,
+        temperature: 0,
+        maxTokens: 500,
+      });
+
+      this.logger.info(
+        'ColleagueNetworkComposerHandler.execute: AI retry raw response',
+        {
+          moduleRunId,
+          rawText: retryResponse.rawText,
+        },
+      );
+      this.logger.info(
+        `ColleagueNetworkComposerHandler.execute: AI retry raw response JSON=${JSON.stringify(
+          { rawText: retryResponse.rawText },
+        )}`,
+      );
+
+      return this.parseJsonResponse(retryResponse.rawText);
     }
   }
 }

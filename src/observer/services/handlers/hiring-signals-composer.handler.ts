@@ -98,7 +98,15 @@ export class HiringSignalsComposerHandler {
         maxTokens: 400,
       });
 
-      const parsed = this.parseJsonResponse(aiResponse.rawText);
+      const parsed = await this.parseJsonResponseWithRetry(
+        aiResponse.rawText,
+        prompt.systemPrompt,
+        prompt.userPrompt,
+        run.ModuleRunID,
+        AI_MODEL.GPT_4O,
+        AI_TASK.HIRING_SIGNALS_EXTRACTION,
+        400,
+      );
 
       const valueJsonWithMeta = {
         ...parsed,
@@ -157,6 +165,38 @@ export class HiringSignalsComposerHandler {
         return JSON.parse(match[0]);
       }
       throw error;
+    }
+  }
+
+  private async parseJsonResponseWithRetry(
+    rawText: string,
+    systemPrompt: string,
+    userPrompt: string,
+    moduleRunId: number,
+    model: AI_MODEL,
+    taskType: AI_TASK,
+    maxTokens: number,
+  ): Promise<any> {
+    try {
+      return this.parseJsonResponse(rawText);
+    } catch (error) {
+      this.logger.warn(
+        `HiringSignalsComposerHandler.execute: Invalid JSON response, retrying with follow-up prompt [moduleRunId=${moduleRunId}, error=${error.message}]`,
+      );
+
+      const followUpPrompt = `${userPrompt}\n\nYour previous response was invalid JSON. Fix it and return ONLY valid JSON with the same schema. Do not add commentary.\n\nInvalid response:\n${rawText}`;
+
+      const retryResponse = await this.aiService.run({
+        provider: AI_PROVIDER.OPENAI,
+        model,
+        taskType,
+        systemPrompt,
+        userPrompt: followUpPrompt,
+        temperature: 0,
+        maxTokens,
+      });
+
+      return this.parseJsonResponse(retryResponse.rawText);
     }
   }
 }
