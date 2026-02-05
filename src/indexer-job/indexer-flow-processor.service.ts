@@ -536,11 +536,6 @@ export class IndexerFlowProcessorService {
         evidence,
       },
     );
-    this.logger.info(
-      `IndexerFlowProcessorService.evaluateFlowFilters: Flow filter evidence payload JSON=${JSON.stringify(
-        evidence,
-      )}`,
-    );
 
     const prompt = buildFlowFilterPrompt(evidence);
     this.logger.info(
@@ -550,14 +545,6 @@ export class IndexerFlowProcessorService {
         systemPrompt: prompt.systemPrompt,
         userPrompt: prompt.userPrompt,
       },
-    );
-    this.logger.info(
-      `IndexerFlowProcessorService.evaluateFlowFilters: Flow filter prompt payload JSON=${JSON.stringify(
-        {
-          systemPrompt: prompt.systemPrompt,
-          userPrompt: prompt.userPrompt,
-        },
-      )}`,
     );
 
     const aiResponse = await this.aiService.run({

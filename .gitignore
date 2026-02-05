@@ -42,3 +42,4 @@ lerna-debug.log*
 yarn.lock
 .*session.json
 local*
+json-to-csv/
