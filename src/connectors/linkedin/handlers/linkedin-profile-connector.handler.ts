@@ -149,7 +149,25 @@ export class LinkedinProfileConnectorHandler {
             filterInstructions,
           };
 
+          this.logger.info(
+            'LinkedinProfileConnectorHandler.execute: Flow filter evidence payload',
+            {
+              moduleRunId: run.ModuleRunID,
+              flowRunId,
+              evidence,
+            },
+          );
+
           const prompt = buildFlowFilterPrompt(evidence);
+          this.logger.info(
+            'LinkedinProfileConnectorHandler.execute: Flow filter prompt payload',
+            {
+              moduleRunId: run.ModuleRunID,
+              flowRunId,
+              systemPrompt: prompt.systemPrompt,
+              userPrompt: prompt.userPrompt,
+            },
+          );
           const aiResponse = await this.aiService.run({
             provider: AI_PROVIDER.OPENAI,
             model: AI_MODEL.GPT_4O_MINI,

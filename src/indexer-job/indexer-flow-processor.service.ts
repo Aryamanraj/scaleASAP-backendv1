@@ -529,7 +529,23 @@ export class IndexerFlowProcessorService {
       filterInstructions,
     };
 
+    this.logger.info(
+      'IndexerFlowProcessorService.evaluateFlowFilters: Flow filter evidence payload',
+      {
+        flowRunId: flowRun.FlowRunID,
+        evidence,
+      },
+    );
+
     const prompt = buildFlowFilterPrompt(evidence);
+    this.logger.info(
+      'IndexerFlowProcessorService.evaluateFlowFilters: Flow filter prompt payload',
+      {
+        flowRunId: flowRun.FlowRunID,
+        systemPrompt: prompt.systemPrompt,
+        userPrompt: prompt.userPrompt,
+      },
+    );
 
     const aiResponse = await this.aiService.run({
       provider: AI_PROVIDER.OPENAI,
