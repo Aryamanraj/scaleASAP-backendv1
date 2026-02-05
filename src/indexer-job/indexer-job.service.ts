@@ -79,6 +79,7 @@ export class IndexerJobService {
           PersonID: dto.personId,
           TriggeredByUserID: dto.triggeredByUserId,
           FlowKey: flowKey,
+          FlowSetID: dto.flowSetId || null,
           InputSummaryJson: {
             profileUrl: dto.profileUrl,
             companyName: dto.companyName || null,

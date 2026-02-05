@@ -44,6 +44,10 @@ export class FlowRun extends BaseEntity {
   InputSummaryJson: any;
 
   @ApiProperty()
+  @Column({ length: 64, nullable: true })
+  FlowSetID: string;
+
+  @ApiProperty()
   @Column({ type: 'jsonb', nullable: true })
   ModulesScheduledJson: any;
 

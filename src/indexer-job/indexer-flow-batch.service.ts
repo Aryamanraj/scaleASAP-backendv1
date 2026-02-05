@@ -9,10 +9,17 @@ import { PersonRepoService } from '../repo/person-repo.service';
 import { PersonProjectRepoService } from '../repo/person-project-repo.service';
 import { ProjectRepoService } from '../repo/project-repo.service';
 import { UserRepoService } from '../repo/user-repo.service';
-import { FlowRunCreateResult, IndexerJobService } from './indexer-job.service';
+import {
+  FlowRunCreateResult,
+  FlowRunStatusResult,
+  IndexerJobService,
+} from './indexer-job.service';
 import { CreateIndexerFlowsDto } from './dto/create-indexer-flows.dto';
 import { Person } from '../repo/entities/person.entity';
 import { PersonProject } from '../repo/entities/person-project.entity';
+import { randomUUID } from 'crypto';
+import { FlowRunRepoService } from '../repo/flow-run-repo.service';
+import { FlowRun } from '../repo/entities/flow-run.entity';
 
 export interface IndexerFlowBatchResultItem {
   input: string;
@@ -21,6 +28,11 @@ export interface IndexerFlowBatchResultItem {
   flowKey?: string;
   jobId?: string;
   error?: string;
+}
+
+export interface IndexerFlowSetResult {
+  flowSetId: string;
+  items: IndexerFlowBatchResultItem[];
 }
 
 interface ResolvedPersonPayload {
@@ -37,6 +49,7 @@ export class IndexerFlowBatchService {
     private projectRepoService: ProjectRepoService,
     private userRepoService: UserRepoService,
     private indexerJobService: IndexerJobService,
+    private flowRunRepoService: FlowRunRepoService,
   ) {}
 
   async createFlows(dto: CreateIndexerFlowsDto): Promise<ResultWithError> {
@@ -62,6 +75,7 @@ export class IndexerFlowBatchService {
       }
 
       const results: IndexerFlowBatchResultItem[] = [];
+      const flowSetId = randomUUID();
 
       for (const input of dto.profileUrls) {
         try {
@@ -87,6 +101,7 @@ export class IndexerFlowBatchService {
               companyName: dto.companyName,
               companyDomain: dto.companyDomain,
               filterInstructions: dto.filterInstructions,
+              flowSetId,
             }),
           );
 
@@ -105,7 +120,7 @@ export class IndexerFlowBatchService {
         }
       }
 
-      return { error: null, data: results };
+      return { error: null, data: { flowSetId, items: results } };
     } catch (error) {
       this.logger.error(
         `IndexerFlowBatchService.createFlows: Error [error=${error.message}]`,
@@ -221,5 +236,44 @@ export class IndexerFlowBatchService {
       PersonID: personId,
       CreatedByUserID: createdByUserId || null,
     });
+  }
+
+  async getFlowSetStatus(flowSetId: string): Promise<ResultWithError> {
+    try {
+      const flows = await Promisify<FlowRun[]>(
+        this.flowRunRepoService.getAll(
+          {
+            where: {
+              FlowSetID: flowSetId,
+            },
+            order: { CreatedAt: 'ASC' },
+          },
+          false,
+        ),
+      );
+
+      const items: FlowRunStatusResult[] = [];
+
+      for (const flow of flows) {
+        const status = await Promisify<FlowRunStatusResult>(
+          this.indexerJobService.getFlowRunStatus(flow.FlowRunID),
+        );
+        items.push(status);
+      }
+
+      return {
+        error: null,
+        data: {
+          flowSetId,
+          total: items.length,
+          items,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `IndexerFlowBatchService.getFlowSetStatus: Error [error=${error.message}]`,
+      );
+      return { error, data: null };
+    }
   }
 }

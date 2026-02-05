@@ -63,4 +63,10 @@ export class CreateIndexerFlowDto {
   @IsString()
   @MaxLength(2000)
   filterInstructions?: string;
+
+  @ApiProperty({ required: false, maxLength: 64 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  flowSetId?: string;
 }
