@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Get,
   HttpStatus,
+  Param,
   Post,
   Res,
   UseGuards,
@@ -17,6 +19,7 @@ import { Promisify } from '../common/helpers/promisifier';
 import { CreateIndexerFlowsDto } from './dto/create-indexer-flows.dto';
 import {
   IndexerFlowBatchResultItem,
+  IndexerFlowSetResult,
   IndexerFlowBatchService,
 } from './indexer-flow-batch.service';
 import { CompositeAuthGuard } from '../auth/guards/composite-auth.guard';
@@ -51,7 +54,7 @@ export class IndexerFlowBatchController {
         throw new Error('triggeredByUserId is required for admin requests');
       }
 
-      const result = await Promisify<IndexerFlowBatchResultItem[]>(
+      const result = await Promisify<IndexerFlowSetResult>(
         this.indexerFlowBatchService.createFlows({
           ...dto,
           triggeredByUserId,
@@ -63,6 +66,43 @@ export class IndexerFlowBatchController {
         ? error.status
         : HttpStatus.INTERNAL_SERVER_ERROR;
       resMessage = `Failed to create batch flows: ${
+        error?.message ?? 'Unknown error'
+      }`;
+      resSuccess = false;
+    }
+
+    makeResponse(res, resStatus, resSuccess, resMessage, resData);
+  }
+
+  @Get('flows/batch/status/:flowSetId')
+  @ApiOperation({ summary: 'Get batch flow status by flowSetId' })
+  @ApiOkResponseGeneric({
+    type: Object,
+    description: 'Batch flow status retrieved successfully',
+  })
+  async getBatchStatus(
+    @Param('flowSetId') flowSetId: string,
+    @Res() res: Response,
+  ) {
+    let resStatus = HttpStatus.OK;
+    let resMessage = 'Batch flow status retrieved successfully';
+    let resData = null;
+    let resSuccess = true;
+
+    try {
+      if (!flowSetId) {
+        throw new Error('flowSetId is required');
+      }
+
+      const result = await Promisify<any>(
+        this.indexerFlowBatchService.getFlowSetStatus(flowSetId),
+      );
+      resData = result;
+    } catch (error) {
+      resStatus = error?.status
+        ? error.status
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+      resMessage = `Failed to fetch batch flow status: ${
         error?.message ?? 'Unknown error'
       }`;
       resSuccess = false;
