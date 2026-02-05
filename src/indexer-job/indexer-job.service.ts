@@ -30,6 +30,7 @@ export interface FlowRunCreateResult {
 export interface FlowRunStatusResult {
   flowRunId: number;
   flowKey: string;
+  profileUrl: string | null;
   status: FlowRunStatus;
   progress: number;
   currentModules: Array<{
@@ -234,6 +235,7 @@ export class IndexerJobService {
         data: {
           flowRunId: flowRun.FlowRunID,
           flowKey: flowRun.FlowKey,
+          profileUrl: flowRun.InputSummaryJson?.profileUrl || null,
           status: derivedStatus,
           progress,
           currentModules,
