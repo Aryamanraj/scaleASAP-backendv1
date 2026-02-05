@@ -50,7 +50,24 @@ Profile:
 - Name: ${profile.fullName || 'unknown'}
 - Headline: ${profile.headline || 'none'}
 - About: ${profile.about || 'none'}
-- Experience Count: ${profile.experience?.length || 0}
+- Experience Count: ${
+    profile.experience?.length || 0
+  } (count of entries, not total years)
+
+Experience Entries (limited):
+${
+  profile.experience && profile.experience.length > 0
+    ? profile.experience
+        .slice(0, 12)
+        .map(
+          (exp, idx) =>
+            `${idx + 1}. ${exp.title || 'unknown'} | ${
+              exp.company || 'unknown'
+            } | ${exp.duration || 'unknown'} | ${exp.location || 'unknown'}`,
+        )
+        .join('\n')
+    : 'No experience entries provided'
+}
 
 Recent Posts (limited):
 ${
