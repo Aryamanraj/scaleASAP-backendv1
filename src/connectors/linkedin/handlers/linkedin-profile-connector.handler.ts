@@ -11,6 +11,14 @@ import { ResultWithError } from '../../../common/interfaces';
 import { LinkedinProvider } from '../../../scraper/providers/linkedin.provider';
 import { ScrapeProfileResponse } from '../../../common/interfaces/linkedin-scraper.interfaces';
 import { PersonRepoService } from '../../../repo/person-repo.service';
+import { FlowRunRepoService } from '../../../repo/flow-run-repo.service';
+import { FlowRun } from '../../../repo/entities/flow-run.entity';
+import { AIService } from '../../../ai/ai.service';
+import { AI_MODEL, AI_PROVIDER, AI_TASK } from '../../../common/types/ai.types';
+import {
+  buildFlowFilterPrompt,
+  FlowFilterEvidence,
+} from '../../../ai/prompts/flow-filter.prompt';
 
 @Injectable()
 export class LinkedinProfileConnectorHandler {
@@ -19,6 +27,8 @@ export class LinkedinProfileConnectorHandler {
     private linkedinDocumentWriter: LinkedinDocumentWriterService,
     private linkedinProvider: LinkedinProvider,
     private personRepoService: PersonRepoService,
+    private flowRunRepoService: FlowRunRepoService,
+    private aiService: AIService,
   ) {}
 
   async execute(run: ModuleRun): Promise<ResultWithError> {
@@ -109,6 +119,67 @@ export class LinkedinProfileConnectorHandler {
         `LinkedinProfileConnectorHandler.execute: Successfully created posts document [DocumentID=${postsDocument.DocumentID}, postsCount=${recentPosts.length}]`,
       );
 
+      const flowRunId = run.InputConfigJson?._flowRunId;
+      if (flowRunId) {
+        const flowRun = await Promisify<FlowRun>(
+          this.flowRunRepoService.get(
+            { where: { FlowRunID: flowRunId } },
+            true,
+          ),
+        );
+
+        const filterInstructions =
+          flowRun.InputSummaryJson?.filterInstructions || null;
+
+        if (filterInstructions && !flowRun.InputSummaryJson?.filterResult) {
+          const evidence: FlowFilterEvidence = {
+            profile: firstResult.data,
+            recentPosts: recentPosts.map((post: any) => ({
+              postUrl: post.postUrl || post.url || null,
+              text: post.text || post.content || null,
+              createdAt: post.createdAt || null,
+            })),
+            recentReposts: (firstResult.data.recentReposts || []).map(
+              (post: any) => ({
+                postUrl: post.postUrl || post.url || null,
+                text: post.text || post.content || null,
+                createdAt: post.createdAt || null,
+              }),
+            ),
+            filterInstructions,
+          };
+
+          const prompt = buildFlowFilterPrompt(evidence);
+          const aiResponse = await this.aiService.run({
+            provider: AI_PROVIDER.OPENAI,
+            model: AI_MODEL.GPT_4O_MINI,
+            taskType: AI_TASK.FLOW_FILTER,
+            systemPrompt: prompt.systemPrompt,
+            userPrompt: prompt.userPrompt,
+            temperature: 0,
+            maxTokens: 300,
+          });
+
+          const filterResult = this.parseJsonResponse(aiResponse.rawText);
+
+          await Promisify(
+            this.flowRunRepoService.update(
+              { FlowRunID: flowRunId },
+              {
+                InputSummaryJson: {
+                  ...flowRun.InputSummaryJson,
+                  filterResult,
+                },
+              },
+            ),
+          );
+
+          if (filterResult?.shouldProceed === false) {
+            throw new Error(`Filtered out: ${filterResult.reason}`);
+          }
+        }
+      }
+
       // Update Person entity with scraped profile data
       const profileData = firstResult.data;
       const personUpdateData: any = {};
@@ -157,6 +228,18 @@ export class LinkedinProfileConnectorHandler {
         `LinkedinProfileConnectorHandler.execute: Error [error=${error.message}, moduleRunId=${run.ModuleRunID}, stack=${error.stack}]`,
       );
       return { error: error, data: null };
+    }
+  }
+
+  private parseJsonResponse(rawText: string): any {
+    try {
+      return JSON.parse(rawText);
+    } catch (error) {
+      const match = rawText.match(/\{[\s\S]*\}/);
+      if (match) {
+        return JSON.parse(match[0]);
+      }
+      throw error;
     }
   }
 }

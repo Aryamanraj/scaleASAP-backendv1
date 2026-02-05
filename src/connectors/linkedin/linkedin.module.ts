@@ -6,9 +6,10 @@ import { LinkedinDocumentWriterService } from '../../observer/services/linkedin-
 import { LinkedinProfileConnectorHandler } from './handlers/linkedin-profile-connector.handler';
 import { LinkedinPostsConnectorHandler } from './handlers/linkedin-posts-connector.handler';
 import { LinkedinProvider } from '../../scraper/providers/linkedin.provider';
+import { AIModule } from '../../ai/ai.module';
 
 @Module({
-  imports: [ConfigModule, HttpModule, RepoModule],
+  imports: [ConfigModule, HttpModule, RepoModule, AIModule],
   providers: [
     LinkedinDocumentWriterService,
     LinkedinProvider,
