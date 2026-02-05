@@ -86,6 +86,7 @@ export class IndexerFlowBatchService {
               flowKey: dto.flowKey,
               companyName: dto.companyName,
               companyDomain: dto.companyDomain,
+              filterInstructions: dto.filterInstructions,
             }),
           );
 

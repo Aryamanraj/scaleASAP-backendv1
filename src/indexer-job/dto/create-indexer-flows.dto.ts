@@ -54,4 +54,10 @@ export class CreateIndexerFlowsDto {
   @IsString()
   @MaxLength(10000)
   experimentDescription?: string;
+
+  @ApiProperty({ required: false, maxLength: 2000 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  filterInstructions?: string;
 }

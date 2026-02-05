@@ -15,6 +15,7 @@ import { UserRepoService } from '../repo/user-repo.service';
 import { FlowRun } from '../repo/entities/flow-run.entity';
 import { Module } from '../repo/entities/module.entity';
 import { ModuleRun } from '../repo/entities/module-run.entity';
+import { Document } from '../repo/entities/document.entity';
 import { QueueNames, QUEUE_JOB_NAMES } from '../common/constants';
 import {
   FlowRunStatus,
@@ -22,6 +23,14 @@ import {
   ModuleScope,
 } from '../common/constants/entity.constants';
 import { FlowStage, STAGE_MODULES } from './indexer-flow.constants';
+import { DocumentsService } from '../documents/documents.service';
+import { DocumentKind, DocumentSource } from '../common/types/document.types';
+import { AIService } from '../ai/ai.service';
+import { AI_MODEL, AI_PROVIDER, AI_TASK } from '../common/types/ai.types';
+import {
+  buildFlowFilterPrompt,
+  FlowFilterEvidence,
+} from '../ai/prompts/flow-filter.prompt';
 
 @Injectable()
 export class IndexerFlowProcessorService {
@@ -31,6 +40,8 @@ export class IndexerFlowProcessorService {
     private flowRunRepoService: FlowRunRepoService,
     private moduleRepoService: ModuleRepoService,
     private moduleRunRepoService: ModuleRunRepoService,
+    private documentsService: DocumentsService,
+    private aiService: AIService,
     private projectRepoService: ProjectRepoService,
     private personRepoService: PersonRepoService,
     private personProjectRepoService: PersonProjectRepoService,
@@ -384,6 +395,59 @@ export class IndexerFlowProcessorService {
         `IndexerFlowProcessorService.checkAndProgressStage: Stage ${currentStage} complete, progressing [flowRunId=${flowRunId}]`,
       );
 
+      if (currentStage === FlowStage.CONNECTORS) {
+        const filterInstructions =
+          flowRun.InputSummaryJson?.filterInstructions || null;
+
+        if (filterInstructions) {
+          const existingFilterResult =
+            flowRun.InputSummaryJson?.filterResult || null;
+
+          const filterResult = existingFilterResult
+            ? existingFilterResult
+            : await this.evaluateFlowFilters(flowRun, filterInstructions);
+
+          if (!existingFilterResult) {
+            await Promisify(
+              this.flowRunRepoService.update(
+                { FlowRunID: flowRunId },
+                {
+                  InputSummaryJson: {
+                    ...flowRun.InputSummaryJson,
+                    filterResult,
+                  },
+                },
+              ),
+            );
+          }
+
+          if (!filterResult.shouldProceed) {
+            this.logger.info(
+              `IndexerFlowProcessorService.checkAndProgressStage: Flow filtered out [flowRunId=${flowRunId}, reason=${filterResult.reason}]`,
+            );
+
+            await Promisify(
+              this.flowRunRepoService.update(
+                { FlowRunID: flowRunId },
+                {
+                  Status: FlowRunStatus.FAILED,
+                  FinishedAt: new Date(),
+                  ErrorJson: {
+                    message: `Filtered out: ${filterResult.reason}`,
+                    filterResult,
+                  } as any,
+                },
+              ),
+            );
+
+            return {
+              error: new Error(`Filtered out: ${filterResult.reason}`),
+              data: null,
+            };
+          }
+        }
+      }
+
       return await this.progressFlowStage(flowRunId);
     } catch (error) {
       this.logger.error(
@@ -403,6 +467,101 @@ export class IndexerFlowProcessorService {
         return FlowStage.COMPLETED;
       default:
         return FlowStage.COMPLETED;
+    }
+  }
+
+  private async evaluateFlowFilters(
+    flowRun: FlowRun,
+    filterInstructions: string,
+  ): Promise<{
+    shouldProceed: boolean;
+    reason: string;
+    confidence: number;
+    unsupportedFilters?: string[];
+  }> {
+    const profileDocument = await Promisify<Document>(
+      this.documentsService.getLatestValidDocument({
+        projectId: flowRun.ProjectID,
+        personId: flowRun.PersonID,
+        source: DocumentSource.LINKEDIN,
+        documentKind: DocumentKind.LINKEDIN_PROFILE,
+      }),
+    );
+
+    let postsDocument: Document | null = null;
+    try {
+      postsDocument = await Promisify<Document>(
+        this.documentsService.getLatestValidDocument({
+          projectId: flowRun.ProjectID,
+          personId: flowRun.PersonID,
+          source: DocumentSource.LINKEDIN,
+          documentKind: DocumentKind.LINKEDIN_POSTS,
+        }),
+      );
+    } catch {
+      postsDocument = null;
+    }
+
+    const profilePayload = Array.isArray(profileDocument.PayloadJson)
+      ? profileDocument.PayloadJson[0]
+      : profileDocument.PayloadJson;
+
+    const postsPayload = postsDocument?.PayloadJson || {};
+    const recentPosts = Array.isArray(postsPayload)
+      ? postsPayload
+      : postsPayload?.recentPosts || [];
+    const recentReposts = Array.isArray(profilePayload?.recentReposts)
+      ? profilePayload.recentReposts
+      : postsPayload?.recentReposts || [];
+
+    const evidence: FlowFilterEvidence = {
+      profile: profilePayload || {},
+      recentPosts: recentPosts.map((post: any) => ({
+        postUrl: post.postUrl || post.url || null,
+        text: post.text || post.content || null,
+        createdAt: post.createdAt || null,
+      })),
+      recentReposts: recentReposts.map((post: any) => ({
+        postUrl: post.postUrl || post.url || null,
+        text: post.text || post.content || null,
+        createdAt: post.createdAt || null,
+      })),
+      filterInstructions,
+    };
+
+    const prompt = buildFlowFilterPrompt(evidence);
+
+    const aiResponse = await this.aiService.run({
+      provider: AI_PROVIDER.OPENAI,
+      model: AI_MODEL.GPT_4O_MINI,
+      taskType: AI_TASK.FLOW_FILTER,
+      systemPrompt: prompt.systemPrompt,
+      userPrompt: prompt.userPrompt,
+      temperature: 0,
+      maxTokens: 300,
+    });
+
+    const parsed = this.parseJsonResponse(aiResponse.rawText);
+
+    return {
+      shouldProceed: Boolean(parsed?.shouldProceed),
+      reason: String(parsed?.reason || 'No reason provided'),
+      confidence: Number(parsed?.confidence ?? 0.5),
+      unsupportedFilters: Array.isArray(parsed?.unsupportedFilters)
+        ? parsed.unsupportedFilters
+        : [],
+    };
+  }
+
+  private parseJsonResponse(rawText: string): any {
+    try {
+      return JSON.parse(rawText);
+    } catch (error) {
+      const match = rawText.match(/\{[\s\S]*\}/);
+      if (match) {
+        return JSON.parse(match[0]);
+      }
+      throw error;
     }
   }
 }

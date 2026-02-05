@@ -9,6 +9,8 @@ import { IndexerJobService } from './indexer-job.service';
 import { IndexerFlowBatchController } from './indexer-flow-batch.controller';
 import { IndexerFlowBatchService } from './indexer-flow-batch.service';
 import { IndexerFlowProcessorService } from './indexer-flow-processor.service';
+import { DocumentsModule } from '../documents/documents.module';
+import { AIModule } from '../ai/ai.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { IndexerFlowProcessorService } from './indexer-flow-processor.service';
     RepoModule,
     AuthModule,
     ModuleRunnerModule,
+    DocumentsModule,
+    AIModule,
   ],
   controllers: [IndexerJobController, IndexerFlowBatchController],
   providers: [

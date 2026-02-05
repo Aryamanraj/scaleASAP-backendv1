@@ -85,6 +85,7 @@ export class IndexerJobService {
             companyDomain: dto.companyDomain || null,
             companyDescription: dto.companyDescription || null,
             experimentDescription: dto.experimentDescription || null,
+            filterInstructions: dto.filterInstructions || null,
           },
           Status: FlowRunStatus.QUEUED,
         }),
