@@ -28,8 +28,7 @@ export interface FlowFilterEvidence {
 }
 
 const SYSTEM_PROMPT = `You are a strict profile filter evaluator.
-You must follow the filter instructions exactly, but NEVER use protected characteristics (gender, race, religion, ethnicity, nationality, sexual orientation, disability, pregnancy, age, or health status).
-If the filter instructions request protected characteristics, mark them as unsupported and DO NOT filter based on them.
+You must follow the filter instructions exactly.
 Return ONLY valid JSON with no extra text or code fences.`;
 
 export function buildFlowFilterPrompt(evidence: FlowFilterEvidence): {
@@ -92,7 +91,6 @@ Return JSON with this exact schema:
 }
 
 Rules:
-- If instructions ask for protected characteristics, list them in unsupportedFilters and do NOT filter based on them.
 - If unsupportedFilters is non-empty and no other valid filters apply, set shouldProceed=true with reason explaining the unsupported request.
 - Be conservative: if evidence is missing, default to shouldProceed=true unless the instructions explicitly require proof.
 `;
