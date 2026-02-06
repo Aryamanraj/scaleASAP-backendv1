@@ -8,6 +8,8 @@ import { AdminAuthGuard } from './guards/admin-auth.guard';
 import { UserAuthGuard } from './guards/user-auth.guard';
 import { CompositeAuthGuard } from './guards/composite-auth.guard';
 import { SupabaseAuthGuard } from './guards/supabase-auth.guard';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 
 @Module({
   imports: [
@@ -29,13 +31,15 @@ import { SupabaseAuthGuard } from './guards/supabase-auth.guard';
     UserAuthGuard,
     CompositeAuthGuard,
     SupabaseAuthGuard,
+    AuthService,
   ],
-  controllers: [],
+  controllers: [AuthController],
   exports: [
     AdminAuthGuard,
     UserAuthGuard,
     CompositeAuthGuard,
     SupabaseAuthGuard,
+    AuthService,
   ],
 })
 export class AuthModule implements NestModule {
