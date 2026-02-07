@@ -20,6 +20,9 @@ import { PersonProject } from '../repo/entities/person-project.entity';
 import { randomUUID } from 'crypto';
 import { FlowRunRepoService } from '../repo/flow-run-repo.service';
 import { FlowRun } from '../repo/entities/flow-run.entity';
+import { AIService } from '../ai/ai.service';
+import { AI_MODEL, AI_PROVIDER, AI_TASK } from '../common/types/ai.types';
+import { QueryFlowSetDto } from './dto/query-flow-set.dto';
 
 export interface IndexerFlowBatchResultItem {
   input: string;
@@ -50,6 +53,7 @@ export class IndexerFlowBatchService {
     private userRepoService: UserRepoService,
     private indexerJobService: IndexerJobService,
     private flowRunRepoService: FlowRunRepoService,
+    private aiService: AIService,
   ) {}
 
   async createFlows(dto: CreateIndexerFlowsDto): Promise<ResultWithError> {
@@ -272,6 +276,76 @@ export class IndexerFlowBatchService {
     } catch (error) {
       this.logger.error(
         `IndexerFlowBatchService.getFlowSetStatus: Error [error=${error.message}]`,
+      );
+      return { error, data: null };
+    }
+  }
+
+  async queryFlowSet(dto: QueryFlowSetDto): Promise<ResultWithError> {
+    try {
+      const flowSetId = dto.flowSetId?.trim();
+      const question = dto.question?.trim();
+
+      if (!flowSetId || !question) {
+        return {
+          error: new Error('flowSetId and question are required'),
+          data: null,
+        };
+      }
+
+      const statusResult = await Promisify<any>(
+        this.getFlowSetStatus(flowSetId),
+      );
+      const items = statusResult?.items || [];
+
+      const summaries = items.map((item: any) => {
+        const summary =
+          item?.finalSummary?.finalSummary || item?.finalSummary || null;
+        return {
+          flowRunId: item?.flowRunId || null,
+          personId: item?.personId || null,
+          profileUrl: item?.profileUrl || null,
+          status: item?.status || null,
+          progress: item?.progress ?? null,
+          summaryCounts: item?.summary || null,
+          finalSummary: summary,
+          moduleRuns: Array.isArray(item?.moduleRuns)
+            ? item.moduleRuns.map((run: any) => ({
+                moduleKey: run?.moduleKey || null,
+                status: run?.status || null,
+                error: run?.error || null,
+              }))
+            : [],
+        };
+      });
+
+      const systemPrompt = `You answer questions using ONLY the provided enriched data (module outputs) and composed summaries.
+    If the data is missing, say so. When recommending candidates, return a short list with profileUrl and 1-2 sentence justification.`;
+
+      const userPrompt = `Question:\n${question}\n\nComposed summaries (JSON):\n${JSON.stringify(
+        summaries,
+      )}`;
+
+      const aiResponse = await this.aiService.run({
+        provider: AI_PROVIDER.OPENAI,
+        model: AI_MODEL.GPT_4O_MINI,
+        taskType: AI_TASK.TEXT_SUMMARIZATION,
+        systemPrompt,
+        userPrompt,
+        temperature: 0.2,
+        maxTokens: 600,
+      });
+
+      return {
+        error: null,
+        data: {
+          flowSetId,
+          answer: aiResponse.rawText,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `IndexerFlowBatchService.queryFlowSet: Error [error=${error.message}]`,
       );
       return { error, data: null };
     }
