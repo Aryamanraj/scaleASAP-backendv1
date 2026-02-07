@@ -1,10 +1,19 @@
 import { MODULE_KEYS } from '../common/constants/module-keys.constants';
 
 export const DEFAULT_FLOW_KEY = 'linkedin-e2e';
+export const CONNECTOR_ENRICHER_FLOW_KEY = 'connector-enricher';
+export const CONNECTOR_ENRICHER_WIZA_FLOW_KEY = 'connector-enricher-wiza';
+export const WIZA_CONNECTOR_ENRICHER_FLOW_KEY = 'wiza-connector-enricher';
+export const COMPOSE_ONLY_FLOW_KEY = 'compose';
+export const FILTER_ONLY_FLOW_KEY = 'filter-only';
 
 // Stage 1: Connectors
 export const CONNECTOR_MODULES: string[] = [
   MODULE_KEYS.LINKEDIN_PROFILE_CONNECTOR, // Now writes both profile AND posts documents
+];
+
+export const WIZA_CONNECTOR_MODULES: string[] = [
+  MODULE_KEYS.LINKEDIN_PROFILE_WIZA_ENRICHED_CONNECTOR,
 ];
 
 // Stage 2: Enrichers
@@ -13,6 +22,11 @@ export const ENRICHER_MODULES: string[] = [
   MODULE_KEYS.LINKEDIN_POSTS_CHUNK_EVIDENCE_EXTRACTOR,
   MODULE_KEYS.LINKEDIN_POSTS_NORMALIZER,
   MODULE_KEYS.PERSONALITY_ACTIVE_TIMES_REDUCER,
+  MODULE_KEYS.LINKEDIN_DIGITAL_IDENTITY_ENRICHER,
+];
+
+export const PROFILE_ONLY_ENRICHER_MODULES: string[] = [
+  MODULE_KEYS.LINKEDIN_CORE_IDENTITY_ENRICHER,
   MODULE_KEYS.LINKEDIN_DIGITAL_IDENTITY_ENRICHER,
 ];
 
@@ -35,6 +49,7 @@ export const COMPOSER_MODULES: string[] = [
 
 export const ALL_FLOW_MODULES = [
   ...CONNECTOR_MODULES,
+  ...WIZA_CONNECTOR_MODULES,
   ...ENRICHER_MODULES,
   ...COMPOSER_MODULES,
 ];
@@ -52,3 +67,53 @@ export const STAGE_MODULES: Record<FlowStage, string[]> = {
   [FlowStage.COMPOSERS]: COMPOSER_MODULES,
   [FlowStage.COMPLETED]: [],
 };
+
+export const FLOW_KEY_STAGES: Record<string, FlowStage[]> = {
+  [DEFAULT_FLOW_KEY]: [
+    FlowStage.CONNECTORS,
+    FlowStage.ENRICHERS,
+    FlowStage.COMPOSERS,
+  ],
+  [CONNECTOR_ENRICHER_FLOW_KEY]: [FlowStage.CONNECTORS, FlowStage.ENRICHERS],
+  [CONNECTOR_ENRICHER_WIZA_FLOW_KEY]: [
+    FlowStage.CONNECTORS,
+    FlowStage.ENRICHERS,
+  ],
+  [WIZA_CONNECTOR_ENRICHER_FLOW_KEY]: [
+    FlowStage.CONNECTORS,
+    FlowStage.ENRICHERS,
+  ],
+  [COMPOSE_ONLY_FLOW_KEY]: [FlowStage.COMPOSERS],
+  [FILTER_ONLY_FLOW_KEY]: [],
+};
+
+export const FLOW_KEY_STAGE_MODULES: Record<
+  string,
+  Partial<Record<FlowStage, string[]>>
+> = {
+  [CONNECTOR_ENRICHER_WIZA_FLOW_KEY]: {
+    [FlowStage.CONNECTORS]: WIZA_CONNECTOR_MODULES,
+    [FlowStage.ENRICHERS]: PROFILE_ONLY_ENRICHER_MODULES,
+  },
+  [WIZA_CONNECTOR_ENRICHER_FLOW_KEY]: {
+    [FlowStage.CONNECTORS]: WIZA_CONNECTOR_MODULES,
+    [FlowStage.ENRICHERS]: PROFILE_ONLY_ENRICHER_MODULES,
+  },
+};
+
+export function getFlowStages(flowKey?: string): FlowStage[] {
+  if (!flowKey) {
+    return FLOW_KEY_STAGES[DEFAULT_FLOW_KEY];
+  }
+  return FLOW_KEY_STAGES[flowKey] || FLOW_KEY_STAGES[DEFAULT_FLOW_KEY];
+}
+
+export function getStageModules(
+  flowKey: string | undefined,
+  stage: FlowStage,
+): string[] {
+  if (flowKey && FLOW_KEY_STAGE_MODULES[flowKey]?.[stage]) {
+    return FLOW_KEY_STAGE_MODULES[flowKey]?.[stage] || [];
+  }
+  return STAGE_MODULES[stage] || [];
+}
