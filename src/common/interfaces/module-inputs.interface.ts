@@ -24,10 +24,12 @@ export interface Layer1ComposerInput {
 
 export interface DecisionMakerBrandComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 export interface RevenueSignalComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
   companyInfo?: {
     name?: string;
     domain?: string;
@@ -37,46 +39,57 @@ export interface RevenueSignalComposerInput {
 
 export interface LinkedinActivityComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 export interface CompetitorMentionsComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 export interface HiringSignalsComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 export interface TopicThemesComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 export interface ToneSignalsComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 export interface ColleagueNetworkComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 export interface ExternalSocialsComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 export interface EventAttendanceComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 export interface LowQualityEngagementComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 export interface DesignHelpSignalsComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 export interface FinalSummaryComposerInput {
   schemaVersion?: string;
+  customPrompt?: string;
 }
 
 /**
