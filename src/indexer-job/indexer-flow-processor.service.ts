@@ -22,7 +22,12 @@ import {
   ModuleRunStatus,
   ModuleScope,
 } from '../common/constants/entity.constants';
-import { FlowStage, STAGE_MODULES } from './indexer-flow.constants';
+import {
+  FlowStage,
+  getFlowStages,
+  getStageModules,
+  FILTER_ONLY_FLOW_KEY,
+} from './indexer-flow.constants';
 import { DocumentsService } from '../documents/documents.service';
 import { DocumentKind, DocumentSource } from '../common/types/document.types';
 import { AIService } from '../ai/ai.service';
@@ -60,9 +65,46 @@ export class IndexerFlowProcessorService {
 
       await this.validateFlowRun(flowRun);
 
-      // Determine current stage - start with CONNECTORS
-      const currentStage = FlowStage.CONNECTORS;
-      const moduleKeys = STAGE_MODULES[currentStage];
+      if (flowRun.FlowKey === FILTER_ONLY_FLOW_KEY) {
+        const filterInstructions =
+          flowRun.InputSummaryJson?.filterInstructions || null;
+
+        const filterResult = filterInstructions
+          ? await this.evaluateFlowFilters(flowRun, filterInstructions)
+          : {
+              shouldProceed: true,
+              reason: 'No filter instructions provided',
+              confidence: 1,
+              unsupportedFilters: [],
+            };
+
+        await Promisify(
+          this.flowRunRepoService.update(
+            { FlowRunID: flowRun.FlowRunID },
+            {
+              Status: FlowRunStatus.COMPLETED,
+              StartedAt: new Date(),
+              FinishedAt: new Date(),
+              InputSummaryJson: {
+                ...flowRun.InputSummaryJson,
+                filterResult,
+              },
+              FinalSummaryJson: filterResult as any,
+            },
+          ),
+        );
+
+        this.logger.info(
+          `IndexerFlowProcessorService.processFlowRun: Completed filter-only flow [flowRunId=${flowRun.FlowRunID}]`,
+        );
+
+        return { error: null, data: [] };
+      }
+
+      const flowStages = getFlowStages(flowRun.FlowKey);
+      // Determine current stage - start with first stage in flow
+      const currentStage = flowStages[0] || FlowStage.CONNECTORS;
+      const moduleKeys = getStageModules(flowRun.FlowKey, currentStage);
 
       const moduleRuns: Array<{ moduleKey: string; moduleRunId: number }> = [];
 
@@ -211,6 +253,7 @@ export class IndexerFlowProcessorService {
         InputConfigJson: {
           ...inputConfig,
           _flowRunId: flowRun.FlowRunID, // Track which flow run this belongs to
+          customPrompt: flowRun.InputSummaryJson?.filterInstructions || null,
         },
       }),
     );
@@ -242,9 +285,12 @@ export class IndexerFlowProcessorService {
         this.flowRunRepoService.get({ where: { FlowRunID: flowRunId } }, true),
       );
 
+      const flowStages = getFlowStages(flowRun.FlowKey);
       const currentStage =
-        flowRun.InputSummaryJson?.currentStage || FlowStage.CONNECTORS;
-      const nextStage = this.getNextStage(currentStage);
+        flowRun.InputSummaryJson?.currentStage ||
+        flowStages[0] ||
+        FlowStage.CONNECTORS;
+      const nextStage = this.getNextStage(currentStage, flowStages);
 
       if (nextStage === FlowStage.COMPLETED) {
         this.logger.info(
@@ -264,7 +310,7 @@ export class IndexerFlowProcessorService {
         return { error: null, data: { completed: true } };
       }
 
-      const moduleKeys = STAGE_MODULES[nextStage];
+      const moduleKeys = getStageModules(flowRun.FlowKey, nextStage);
       const moduleRuns: Array<{ moduleKey: string; moduleRunId: number }> = [];
 
       for (const moduleKey of moduleKeys) {
@@ -315,9 +361,12 @@ export class IndexerFlowProcessorService {
         this.flowRunRepoService.get({ where: { FlowRunID: flowRunId } }, true),
       );
 
+      const flowStages = getFlowStages(flowRun.FlowKey);
       const currentStage =
-        flowRun.InputSummaryJson?.currentStage || FlowStage.CONNECTORS;
-      const moduleKeys = STAGE_MODULES[currentStage];
+        flowRun.InputSummaryJson?.currentStage ||
+        flowStages[0] ||
+        FlowStage.CONNECTORS;
+      const moduleKeys = getStageModules(flowRun.FlowKey, currentStage);
 
       // Get all module runs for this flow (filter by _flowRunId in InputConfigJson)
       const allModuleRuns = await Promisify<ModuleRun[]>(
@@ -457,17 +506,18 @@ export class IndexerFlowProcessorService {
     }
   }
 
-  private getNextStage(currentStage: FlowStage): FlowStage {
-    switch (currentStage) {
-      case FlowStage.CONNECTORS:
-        return FlowStage.ENRICHERS;
-      case FlowStage.ENRICHERS:
-        return FlowStage.COMPOSERS;
-      case FlowStage.COMPOSERS:
-        return FlowStage.COMPLETED;
-      default:
-        return FlowStage.COMPLETED;
+  private getNextStage(
+    currentStage: FlowStage,
+    flowStages: FlowStage[],
+  ): FlowStage {
+    const currentIndex = flowStages.indexOf(currentStage);
+    if (currentIndex === -1) {
+      return FlowStage.COMPLETED;
     }
+    if (currentIndex >= flowStages.length - 1) {
+      return FlowStage.COMPLETED;
+    }
+    return flowStages[currentIndex + 1];
   }
 
   private async evaluateFlowFilters(
@@ -557,7 +607,11 @@ export class IndexerFlowProcessorService {
       maxTokens: 300,
     });
 
-    const parsed = this.parseJsonResponse(aiResponse.rawText);
+    const parsed = await this.parseJsonResponseWithRetry(
+      aiResponse.rawText,
+      prompt.systemPrompt,
+      prompt.userPrompt,
+    );
 
     return {
       shouldProceed: Boolean(parsed?.shouldProceed),
@@ -578,6 +632,47 @@ export class IndexerFlowProcessorService {
         return JSON.parse(match[0]);
       }
       throw error;
+    }
+  }
+
+  private async parseJsonResponseWithRetry(
+    rawText: string,
+    systemPrompt: string,
+    userPrompt: string,
+  ): Promise<any> {
+    try {
+      return this.parseJsonResponse(rawText);
+    } catch (error) {
+      let retryRawText = rawText;
+      let lastError = error as Error;
+
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        this.logger.warn(
+          `IndexerFlowProcessorService.evaluateFlowFilters: Invalid JSON response, retrying with follow-up prompt [attempt=${attempt}, error=${lastError.message}]`,
+        );
+
+        const followUpPrompt = `${userPrompt}\n\nYour previous response was invalid JSON. Fix it and return ONLY valid JSON with the same schema. Do not add commentary.\n\nInvalid response:\n${retryRawText}`;
+
+        const retryResponse = await this.aiService.run({
+          provider: AI_PROVIDER.OPENAI,
+          model: AI_MODEL.GPT_4O_MINI,
+          taskType: AI_TASK.FLOW_FILTER,
+          systemPrompt,
+          userPrompt: followUpPrompt,
+          temperature: 0,
+          maxTokens: 300,
+        });
+
+        retryRawText = retryResponse.rawText;
+
+        try {
+          return this.parseJsonResponse(retryRawText);
+        } catch (retryError) {
+          lastError = retryError as Error;
+        }
+      }
+
+      throw lastError;
     }
   }
 }
