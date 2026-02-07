@@ -45,6 +45,12 @@ export class SeedService implements OnModuleInit {
           isEnabled: true,
         },
         {
+          moduleKey: MODULE_KEYS.LINKEDIN_PROFILE_WIZA_ENRICHED_CONNECTOR,
+          moduleType: 'CONNECTOR',
+          version: 'v1',
+          isEnabled: true,
+        },
+        {
           moduleKey: MODULE_KEYS.MANUAL_DOCUMENT_CONNECTOR,
           moduleType: 'CONNECTOR',
           version: 'v1',

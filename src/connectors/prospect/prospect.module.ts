@@ -5,6 +5,7 @@ import { ProspectSearchConnectorHandler } from './handlers/prospect-search-conne
 import { ProspectSearchConnectorService } from './services/prospect-search-connector.service';
 import { ProspectFanoutService } from './services/prospect-fanout.service';
 import { ProspectPersonUpsertService } from './services/prospect-person-upsert.service';
+import { LinkedinProfileWizaEnrichedConnectorHandler } from '../wiza/handlers/linkedin-profile-wiza-enriched-connector.handler';
 
 @Module({
   imports: [RepoModule, ScraperModule],
@@ -13,12 +14,14 @@ import { ProspectPersonUpsertService } from './services/prospect-person-upsert.s
     ProspectSearchConnectorService,
     ProspectFanoutService,
     ProspectPersonUpsertService,
+    LinkedinProfileWizaEnrichedConnectorHandler,
   ],
   exports: [
     ProspectSearchConnectorHandler,
     ProspectSearchConnectorService,
     ProspectFanoutService,
     ProspectPersonUpsertService,
+    LinkedinProfileWizaEnrichedConnectorHandler,
   ],
 })
 export class ProspectModule {}
