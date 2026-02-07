@@ -90,19 +90,23 @@ export class ColleagueNetworkComposerHandler {
       };
 
       const prompt = buildColleagueNetworkPrompt(evidence);
+      const customPrompt = input.customPrompt?.trim();
+      const userPrompt = customPrompt
+        ? `${prompt.userPrompt}\n\nCustom Instructions:\n${customPrompt}`
+        : prompt.userPrompt;
       this.logger.info(
         'ColleagueNetworkComposerHandler.execute: AI prompt payload',
         {
           moduleRunId: run.ModuleRunID,
           systemPrompt: prompt.systemPrompt,
-          userPrompt: prompt.userPrompt,
+          userPrompt,
         },
       );
       this.logger.info(
         `ColleagueNetworkComposerHandler.execute: AI prompt payload JSON=${JSON.stringify(
           {
             systemPrompt: prompt.systemPrompt,
-            userPrompt: prompt.userPrompt,
+            userPrompt,
           },
         )}`,
       );
@@ -112,7 +116,7 @@ export class ColleagueNetworkComposerHandler {
         model: AI_MODEL.GPT_4O_MINI,
         taskType: AI_TASK.COLLEAGUE_NETWORK_INFERENCE,
         systemPrompt: prompt.systemPrompt,
-        userPrompt: prompt.userPrompt,
+        userPrompt,
         temperature: 0.3,
         maxTokens: 500,
       });
@@ -133,7 +137,7 @@ export class ColleagueNetworkComposerHandler {
       const parsed = await this.parseJsonResponseWithRetry(
         aiResponse.rawText,
         prompt.systemPrompt,
-        prompt.userPrompt,
+        userPrompt,
         run.ModuleRunID,
       );
 

@@ -87,13 +87,17 @@ export class HiringSignalsComposerHandler {
       };
 
       const prompt = buildHiringSignalsPrompt(evidence);
+      const customPrompt = input.customPrompt?.trim();
+      const userPrompt = customPrompt
+        ? `${prompt.userPrompt}\n\nCustom Instructions:\n${customPrompt}`
+        : prompt.userPrompt;
 
       const aiResponse = await this.aiService.run({
         provider: AI_PROVIDER.OPENAI,
         model: AI_MODEL.GPT_4O,
         taskType: AI_TASK.HIRING_SIGNALS_EXTRACTION,
         systemPrompt: prompt.systemPrompt,
-        userPrompt: prompt.userPrompt,
+        userPrompt,
         temperature: 0.3,
         maxTokens: 400,
       });
@@ -101,7 +105,7 @@ export class HiringSignalsComposerHandler {
       const parsed = await this.parseJsonResponseWithRetry(
         aiResponse.rawText,
         prompt.systemPrompt,
-        prompt.userPrompt,
+        userPrompt,
         run.ModuleRunID,
         AI_MODEL.GPT_4O,
         AI_TASK.HIRING_SIGNALS_EXTRACTION,
@@ -180,23 +184,36 @@ export class HiringSignalsComposerHandler {
     try {
       return this.parseJsonResponse(rawText);
     } catch (error) {
-      this.logger.warn(
-        `HiringSignalsComposerHandler.execute: Invalid JSON response, retrying with follow-up prompt [moduleRunId=${moduleRunId}, error=${error.message}]`,
-      );
+      let retryRawText = rawText;
+      let lastError = error as Error;
 
-      const followUpPrompt = `${userPrompt}\n\nYour previous response was invalid JSON. Fix it and return ONLY valid JSON with the same schema. Do not add commentary.\n\nInvalid response:\n${rawText}`;
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        this.logger.warn(
+          `HiringSignalsComposerHandler.execute: Invalid JSON response, retrying with follow-up prompt [moduleRunId=${moduleRunId}, attempt=${attempt}, error=${lastError.message}]`,
+        );
 
-      const retryResponse = await this.aiService.run({
-        provider: AI_PROVIDER.OPENAI,
-        model,
-        taskType,
-        systemPrompt,
-        userPrompt: followUpPrompt,
-        temperature: 0,
-        maxTokens,
-      });
+        const followUpPrompt = `${userPrompt}\n\nYour previous response was invalid JSON. Fix it and return ONLY valid JSON with the same schema. Do not add commentary.\n\nInvalid response:\n${retryRawText}`;
 
-      return this.parseJsonResponse(retryResponse.rawText);
+        const retryResponse = await this.aiService.run({
+          provider: AI_PROVIDER.OPENAI,
+          model,
+          taskType,
+          systemPrompt,
+          userPrompt: followUpPrompt,
+          temperature: 0,
+          maxTokens,
+        });
+
+        retryRawText = retryResponse.rawText;
+
+        try {
+          return this.parseJsonResponse(retryRawText);
+        } catch (retryError) {
+          lastError = retryError as Error;
+        }
+      }
+
+      throw lastError;
     }
   }
 }
