@@ -32,6 +32,7 @@ import { ContentChunkerHandler } from '../../enrichers/content-chunker/handlers/
 import { LinkedinPostsChunkEvidenceExtractorHandler } from '../../enrichers/linkedin-posts-chunk-evidence-extractor/handlers/linkedin-posts-chunk-evidence-extractor.handler';
 import { PersonalityActiveTimesReducerHandler } from '../../enrichers/personality-active-times-reducer/handlers/personality-active-times-reducer.handler';
 import { ProspectSearchConnectorHandler } from '../../connectors/prospect/handlers/prospect-search-connector.handler';
+import { LinkedinProfileWizaEnrichedConnectorHandler } from '../../connectors/wiza/handlers/linkedin-profile-wiza-enriched-connector.handler';
 import {
   LINKEDIN_PROFILE_CONNECTOR_KEY,
   LINKEDIN_POSTS_CONNECTOR_KEY,
@@ -70,6 +71,7 @@ export class ModuleDispatcherService {
     private linkedinPostsChunkEvidenceExtractorHandler: LinkedinPostsChunkEvidenceExtractorHandler,
     private personalityActiveTimesReducerHandler: PersonalityActiveTimesReducerHandler,
     private prospectSearchConnectorHandler: ProspectSearchConnectorHandler,
+    private linkedinProfileWizaEnrichedConnectorHandler: LinkedinProfileWizaEnrichedConnectorHandler,
   ) {}
 
   async execute(run: ModuleRun): Promise<ResultWithError> {
@@ -155,6 +157,8 @@ export class ModuleDispatcherService {
           return await this.personalityActiveTimesReducerHandler.execute(run);
         case MODULE_KEYS.PROSPECT_SEARCH_CONNECTOR:
           return await this.prospectSearchConnectorHandler.execute(run);
+        case MODULE_KEYS.LINKEDIN_PROFILE_WIZA_ENRICHED_CONNECTOR:
+          return await this.linkedinProfileWizaEnrichedConnectorHandler.execute(run);
         default:
           throw new Error(
             `No handler registered for module key: ${run.ModuleKey}`,
