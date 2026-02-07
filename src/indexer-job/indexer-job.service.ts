@@ -19,7 +19,12 @@ import { ModuleRun } from '../repo/entities/module-run.entity';
 import { ClaimRepoService } from '../repo/claim-repo.service';
 import { CLAIM_KEY } from '../common/types/claim-types';
 import { Claim } from '../repo/entities/claim.entity';
-import { DEFAULT_FLOW_KEY } from './indexer-flow.constants';
+import { DocumentRepoService } from '../repo/document-repo.service';
+import { Document } from '../repo/entities/document.entity';
+import {
+  DEFAULT_FLOW_KEY,
+  FILTER_ONLY_FLOW_KEY,
+} from './indexer-flow.constants';
 
 export interface FlowRunCreateResult {
   flowRunId: number;
@@ -30,6 +35,7 @@ export interface FlowRunCreateResult {
 export interface FlowRunStatusResult {
   flowRunId: number;
   flowKey: string;
+  personId: number | null;
   profileUrl: string | null;
   status: FlowRunStatus;
   progress: number;
@@ -39,6 +45,7 @@ export interface FlowRunStatusResult {
     startedAt: Date | null;
   }>;
   finalSummary: Record<string, unknown> | null;
+  enrichedData: Record<string, unknown> | null;
   summary: {
     total: number;
     completed: number;
@@ -64,6 +71,7 @@ export class IndexerJobService {
     private flowRunRepoService: FlowRunRepoService,
     private moduleRunRepoService: ModuleRunRepoService,
     private claimRepoService: ClaimRepoService,
+    private documentRepoService: DocumentRepoService,
   ) {}
 
   async createFlowRun(dto: CreateIndexerFlowDto): Promise<ResultWithError> {
@@ -133,6 +141,39 @@ export class IndexerJobService {
         `IndexerJobService.getFlowRunStatus: Retrieved flow run [flowRunId=${flowRunId}, projectId=${flowRun.ProjectID}, personId=${flowRun.PersonID}]`,
       );
 
+      if (flowRun.FlowKey === FILTER_ONLY_FLOW_KEY) {
+        const filterResult =
+          (flowRun.FinalSummaryJson as Record<string, unknown> | null) ||
+          (flowRun.InputSummaryJson?.filterResult as Record<
+            string,
+            unknown
+          > | null) ||
+          null;
+
+        return {
+          error: null,
+          data: {
+            flowRunId: flowRun.FlowRunID,
+            flowKey: flowRun.FlowKey,
+            personId: flowRun.PersonID,
+            profileUrl: flowRun.InputSummaryJson?.profileUrl || null,
+            status: flowRun.Status,
+            progress: flowRun.Status === FlowRunStatus.COMPLETED ? 100 : 0,
+            currentModules: [],
+            finalSummary: filterResult,
+            enrichedData: null,
+            summary: {
+              total: 0,
+              completed: 0,
+              failed: 0,
+              running: 0,
+              queued: 0,
+            },
+            moduleRuns: [],
+          },
+        };
+      }
+
       // Get all module runs for this flow run by checking _flowRunId in InputConfigJson
       const allModuleRuns = await Promisify<ModuleRun[]>(
         this.moduleRunRepoService.getAll(
@@ -163,10 +204,28 @@ export class IndexerJobService {
       const summary = this.getModuleRunSummary(moduleRuns);
       const derivedStatus = this.deriveFlowStatus(summary);
 
+      const moduleRunIds = moduleRuns.map((run) => run.ModuleRunID);
+      const enrichedDocuments = moduleRunIds.length
+        ? await Promisify<Document[]>(
+            this.documentRepoService.getAll(
+              {
+                where: {
+                  ProjectID: flowRun.ProjectID,
+                  PersonID: flowRun.PersonID,
+                  ModuleRunID: In(moduleRunIds),
+                  IsValid: true,
+                },
+                order: { CapturedAt: 'DESC' },
+              },
+              false,
+            ),
+          )
+        : [];
+      const enrichedData = this.buildEnrichedData(enrichedDocuments);
+
       // Get final summary claim that was created by a module run from THIS flow
       let finalSummaryClaim: Claim | null = null;
       if (moduleRuns.length > 0) {
-        const moduleRunIds = moduleRuns.map((mr) => mr.ModuleRunID);
         const allClaims = await Promisify<Claim[]>(
           this.claimRepoService.getAll(
             {
@@ -235,11 +294,13 @@ export class IndexerJobService {
         data: {
           flowRunId: flowRun.FlowRunID,
           flowKey: flowRun.FlowKey,
+          personId: flowRun.PersonID,
           profileUrl: flowRun.InputSummaryJson?.profileUrl || null,
           status: derivedStatus,
           progress,
           currentModules,
           finalSummary: finalSummaryValue,
+          enrichedData,
           summary: {
             total: summary.total,
             completed: summary.completed.length,
@@ -286,6 +347,27 @@ export class IndexerJobService {
       running,
       queued,
     };
+  }
+
+  private buildEnrichedData(
+    documents: Document[],
+  ): Record<string, unknown> | null {
+    if (!documents || documents.length === 0) {
+      return null;
+    }
+
+    return documents.reduce<Record<string, unknown>>((acc, doc) => {
+      const key = doc.DocumentKind || doc.ContentType || 'unknown';
+      const current = acc[key];
+      if (Array.isArray(current)) {
+        current.push(doc.PayloadJson ?? null);
+      } else if (current !== undefined) {
+        acc[key] = [current, doc.PayloadJson ?? null];
+      } else {
+        acc[key] = [doc.PayloadJson ?? null];
+      }
+      return acc;
+    }, {});
   }
 
   private deriveFlowStatus(summary: {
