@@ -4,12 +4,36 @@
 
 export enum AI_PROVIDER {
   OPENAI = 'OPENAI',
+  MEGALLM = 'MEGALLM',
 }
 
-export enum AI_MODEL {
+export enum AI_MODEL_OPENAI {
   GPT_4O = 'gpt-4o',
-  GPT_4O_MINI = 'gpt-4o-mini',
+  GPT_5 = 'gpt-5',
+  GPT_5_1 = 'gpt-5.1',
+  GPT_5_2 = 'gpt-5.2',
+  // GPT_4O_MINI = 'gpt-4o-mini',
+  // GPT_4_1 = 'gpt-4.1',
+  // GPT_3_5_TURBO = 'gpt-3.5-turbo',
 }
+
+export enum AI_MODEL_MEGALLM {
+  OPENAI_GPT_OSS_120B = 'openai-gpt-oss-120b',
+  DEEPSEEK_R1_DISTILL_LLAMA_70B = 'deepseek-r1-distill-llama-70b',
+  DEEPSEEK_V3_1 = 'deepseek-ai/deepseek-v3.1',
+  DEEPSEEK_V3_1_TERMINUS = 'deepseek-ai/deepseek-v3.1-terminus',
+  MISTRAL_NEMOTRON = 'mistralai/mistral-nemotron',
+  QWEN3_NEXT_80B_A3B_INSTRUCT = 'qwen/qwen3-next-80b-a3b-instruct',
+  KIMI_K2_INSTRUCT_0905 = 'moonshotai/kimi-k2-instruct-0905',
+  MINIMAX_M2 = 'minimaxai/minimax-m2',
+  // GPT_4O_MINI = 'gpt-4o-mini',
+  // GPT_3_5_TURBO = 'gpt-3.5-turbo',
+  // GPT_4_1 = 'gpt-4.1',
+  // DEEPSEEK_V3_2 = 'deepseek-v3.2',
+  // GPT_4O = 'gpt-4o',
+}
+
+export type AI_MODEL = AI_MODEL_OPENAI | AI_MODEL_MEGALLM;
 
 export enum AI_TASK {
   AGE_RANGE_ESTIMATION = 'AGE_RANGE_ESTIMATION',

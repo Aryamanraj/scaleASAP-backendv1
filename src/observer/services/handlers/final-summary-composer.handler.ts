@@ -14,7 +14,11 @@ import { ResultWithError } from '../../../common/interfaces';
 import { DocumentSource } from '../../../common/types/claim-types';
 import { DocumentKind } from '../../../common/types/document.types';
 import { CLAIM_KEY } from '../../../common/types/claim-types';
-import { AI_PROVIDER, AI_MODEL, AI_TASK } from '../../../common/types/ai.types';
+import {
+  AI_PROVIDER,
+  AI_MODEL_OPENAI,
+  AI_TASK,
+} from '../../../common/types/ai.types';
 import {
   buildFinalSummaryPrompt,
   FinalSummaryEvidence,
@@ -138,7 +142,7 @@ export class FinalSummaryComposerHandler {
 
       const aiResponse = await this.aiService.run({
         provider: AI_PROVIDER.OPENAI,
-        model: AI_MODEL.GPT_4O_MINI,
+        model: AI_MODEL_OPENAI.GPT_4O,
         taskType: AI_TASK.FINAL_SUMMARY_INFERENCE,
         systemPrompt: prompt.systemPrompt,
         userPrompt,
@@ -151,7 +155,7 @@ export class FinalSummaryComposerHandler {
         prompt.systemPrompt,
         userPrompt,
         run.ModuleRunID,
-        AI_MODEL.GPT_4O_MINI,
+        AI_MODEL_OPENAI.GPT_4O,
         AI_TASK.FINAL_SUMMARY_INFERENCE,
         700,
       );
@@ -221,7 +225,7 @@ export class FinalSummaryComposerHandler {
     systemPrompt: string,
     userPrompt: string,
     moduleRunId: number,
-    model: AI_MODEL,
+    model: AI_MODEL_OPENAI,
     taskType: AI_TASK,
     maxTokens: number,
   ): Promise<any> {

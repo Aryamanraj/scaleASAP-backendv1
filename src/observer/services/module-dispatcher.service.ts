@@ -158,7 +158,9 @@ export class ModuleDispatcherService {
         case MODULE_KEYS.PROSPECT_SEARCH_CONNECTOR:
           return await this.prospectSearchConnectorHandler.execute(run);
         case MODULE_KEYS.LINKEDIN_PROFILE_WIZA_ENRICHED_CONNECTOR:
-          return await this.linkedinProfileWizaEnrichedConnectorHandler.execute(run);
+          return await this.linkedinProfileWizaEnrichedConnectorHandler.execute(
+            run,
+          );
         default:
           throw new Error(
             `No handler registered for module key: ${run.ModuleKey}`,

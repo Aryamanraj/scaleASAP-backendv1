@@ -31,7 +31,11 @@ import {
 import { DocumentsService } from '../documents/documents.service';
 import { DocumentKind, DocumentSource } from '../common/types/document.types';
 import { AIService } from '../ai/ai.service';
-import { AI_MODEL, AI_PROVIDER, AI_TASK } from '../common/types/ai.types';
+import {
+  AI_MODEL_OPENAI,
+  AI_PROVIDER,
+  AI_TASK,
+} from '../common/types/ai.types';
 import {
   buildFlowFilterPrompt,
   FlowFilterEvidence,
@@ -599,7 +603,7 @@ export class IndexerFlowProcessorService {
 
     const aiResponse = await this.aiService.run({
       provider: AI_PROVIDER.OPENAI,
-      model: AI_MODEL.GPT_4O_MINI,
+      model: AI_MODEL_OPENAI.GPT_4O,
       taskType: AI_TASK.FLOW_FILTER,
       systemPrompt: prompt.systemPrompt,
       userPrompt: prompt.userPrompt,
@@ -655,7 +659,7 @@ export class IndexerFlowProcessorService {
 
         const retryResponse = await this.aiService.run({
           provider: AI_PROVIDER.OPENAI,
-          model: AI_MODEL.GPT_4O_MINI,
+          model: AI_MODEL_OPENAI.GPT_4O,
           taskType: AI_TASK.FLOW_FILTER,
           systemPrompt,
           userPrompt: followUpPrompt,

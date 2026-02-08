@@ -14,7 +14,11 @@ import {
   CHUNK_STATUS,
   EVIDENCE_STATUS,
 } from '../../../common/types/posts.types';
-import { AI_TASK, AI_MODEL, AI_PROVIDER } from '../../../common/types/ai.types';
+import {
+  AI_TASK,
+  AI_MODEL_OPENAI,
+  AI_PROVIDER,
+} from '../../../common/types/ai.types';
 import { buildPostsChunkEvidencePrompt } from '../../../ai/prompts/posts-chunk-evidence.prompt';
 import { Promisify } from '../../../common/helpers/promisifier';
 import { IsNull, Not } from 'typeorm';
@@ -201,7 +205,7 @@ export class LinkedinPostsChunkEvidenceExtractorService {
         taskType: AI_TASK.POSTS_CHUNK_EVIDENCE_EXTRACTION,
         systemPrompt: prompt.systemPrompt,
         userPrompt: prompt.userPrompt,
-        model: AI_MODEL.GPT_4O_MINI,
+        model: AI_MODEL_OPENAI.GPT_4O,
         temperature: 0.3,
       });
 
@@ -324,7 +328,7 @@ export class LinkedinPostsChunkEvidenceExtractorService {
             ContentChunkID: chunk.ContentChunkID,
             EvidenceJson: null,
             AIProvider: AI_PROVIDER.OPENAI,
-            AIModel: AI_MODEL.GPT_4O_MINI,
+            AIModel: AI_MODEL_OPENAI.GPT_4O,
             TokensUsed: null,
             Status: EVIDENCE_STATUS.FAILED,
             ErrorJson: errorData as any,

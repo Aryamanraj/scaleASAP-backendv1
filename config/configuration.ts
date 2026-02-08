@@ -22,6 +22,10 @@ export default () => {
         apiKey: process.env.OPENAI_API_KEY,
         model: process.env.OPENAI_MODEL || 'gpt-4o',
       },
+      megallm: {
+        apiKey: process.env.MEGALLM_API_KEY,
+        baseUrl: process.env.MEGALLM_BASE_URL || 'https://ai.megallm.io/v1',
+      },
       gemini: {
         apiKey: process.env.GEMINI_API_KEY,
         model: process.env.GEMINI_MODEL || 'gemini-1.5-pro',

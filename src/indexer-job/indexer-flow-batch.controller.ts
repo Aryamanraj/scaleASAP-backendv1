@@ -118,10 +118,7 @@ export class IndexerFlowBatchController {
     type: Object,
     description: 'Flow set query answered successfully',
   })
-  async queryFlowSet(
-    @Body() dto: QueryFlowSetDto,
-    @Res() res: Response,
-  ) {
+  async queryFlowSet(@Body() dto: QueryFlowSetDto, @Res() res: Response) {
     let resStatus = HttpStatus.OK;
     let resMessage = 'Flow set query answered successfully';
     let resData = null;

@@ -21,7 +21,12 @@ import { randomUUID } from 'crypto';
 import { FlowRunRepoService } from '../repo/flow-run-repo.service';
 import { FlowRun } from '../repo/entities/flow-run.entity';
 import { AIService } from '../ai/ai.service';
-import { AI_MODEL, AI_PROVIDER, AI_TASK } from '../common/types/ai.types';
+import {
+  AI_MODEL_MEGALLM,
+  AI_MODEL_OPENAI,
+  AI_PROVIDER,
+  AI_TASK,
+} from '../common/types/ai.types';
 import { QueryFlowSetDto } from './dto/query-flow-set.dto';
 
 export interface IndexerFlowBatchResultItem {
@@ -326,9 +331,16 @@ export class IndexerFlowBatchService {
         summaries,
       )}`;
 
+      const provider = dto.provider || AI_PROVIDER.OPENAI;
+      const model =
+        dto.model ||
+        (provider === AI_PROVIDER.MEGALLM
+          ? AI_MODEL_MEGALLM.OPENAI_GPT_OSS_120B
+          : AI_MODEL_OPENAI.GPT_4O);
+
       const aiResponse = await this.aiService.run({
-        provider: AI_PROVIDER.OPENAI,
-        model: AI_MODEL.GPT_4O_MINI,
+        provider,
+        model,
         taskType: AI_TASK.TEXT_SUMMARIZATION,
         systemPrompt,
         userPrompt,

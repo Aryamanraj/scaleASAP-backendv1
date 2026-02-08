@@ -1,5 +1,5 @@
 /**
- * OpenAI Provider Implementation
+ * MegaLLM Provider Implementation
  */
 
 import { Injectable, Inject } from '@nestjs/common';
@@ -11,7 +11,7 @@ import { AIRequest, AIResponse } from '../../common/interfaces/ai.interfaces';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class OpenAIProvider implements AIProvider {
+export class MegaLLMProvider implements AIProvider {
   private client: OpenAI;
 
   constructor(
@@ -19,18 +19,24 @@ export class OpenAIProvider implements AIProvider {
     private configService: ConfigService,
   ) {
     const apiKey =
-      this.configService.get<string>('ai.openai.apiKey') ||
-      this.configService.get<string>('OPENAI_API_KEY');
+      this.configService.get<string>('ai.megallm.apiKey') ||
+      this.configService.get<string>('MEGALLM_API_KEY');
+
     if (!apiKey) {
-      throw new Error('OPENAI_API_KEY not found in environment variables');
+      throw new Error('MEGALLM_API_KEY not found in environment variables');
     }
-    this.client = new OpenAI({ apiKey });
+
+    const baseURL =
+      this.configService.get<string>('ai.megallm.baseUrl') ||
+      'https://ai.megallm.io/v1';
+
+    this.client = new OpenAI({ apiKey, baseURL });
   }
 
   async run(request: AIRequest): Promise<AIResponse> {
     try {
       this.logger.info(
-        `OpenAIProvider.run: Executing request [model=${request.model}, taskType=${request.taskType}]`,
+        `MegaLLMProvider.run: Executing request [model=${request.model}, taskType=${request.taskType}]`,
       );
 
       const completion = await this.client.chat.completions.create({
@@ -47,7 +53,7 @@ export class OpenAIProvider implements AIProvider {
       const tokensUsed = completion.usage?.total_tokens;
 
       this.logger.info(
-        `OpenAIProvider.run: Completed [model=${request.model}, tokensUsed=${tokensUsed}]`,
+        `MegaLLMProvider.run: Completed [model=${request.model}, tokensUsed=${tokensUsed}]`,
       );
 
       return {
@@ -58,7 +64,7 @@ export class OpenAIProvider implements AIProvider {
       };
     } catch (error) {
       this.logger.error(
-        `OpenAIProvider.run: Error [error=${error.message}, model=${request.model}, taskType=${request.taskType}]`,
+        `MegaLLMProvider.run: Error [error=${error.message}, model=${request.model}, taskType=${request.taskType}]`,
       );
       throw error;
     }

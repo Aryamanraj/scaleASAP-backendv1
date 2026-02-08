@@ -9,12 +9,14 @@ import { Logger } from 'winston';
 import { AIRequest, AIResponse } from '../common/interfaces/ai.interfaces';
 import { AI_PROVIDER } from '../common/types/ai.types';
 import { OpenAIProvider } from './providers/openai.provider';
+import { MegaLLMProvider } from './providers/megallm.provider';
 
 @Injectable()
 export class AIService {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
     private openaiProvider: OpenAIProvider,
+    private megallmProvider: MegaLLMProvider,
   ) {}
 
   async run<T = any>(request: AIRequest): Promise<AIResponse<T>> {
@@ -28,6 +30,9 @@ export class AIService {
       switch (request.provider) {
         case AI_PROVIDER.OPENAI:
           response = await this.openaiProvider.run(request);
+          break;
+        case AI_PROVIDER.MEGALLM:
+          response = await this.megallmProvider.run(request);
           break;
         default:
           throw new Error(`Unsupported AI provider: ${request.provider}`);

@@ -14,7 +14,11 @@ import { PersonRepoService } from '../../../repo/person-repo.service';
 import { FlowRunRepoService } from '../../../repo/flow-run-repo.service';
 import { FlowRun } from '../../../repo/entities/flow-run.entity';
 import { AIService } from '../../../ai/ai.service';
-import { AI_MODEL, AI_PROVIDER, AI_TASK } from '../../../common/types/ai.types';
+import {
+  AI_MODEL_OPENAI,
+  AI_PROVIDER,
+  AI_TASK,
+} from '../../../common/types/ai.types';
 import {
   buildFlowFilterPrompt,
   FlowFilterEvidence,
@@ -170,7 +174,7 @@ export class LinkedinProfileConnectorHandler {
           );
           const aiResponse = await this.aiService.run({
             provider: AI_PROVIDER.OPENAI,
-            model: AI_MODEL.GPT_4O_MINI,
+            model: AI_MODEL_OPENAI.GPT_4O,
             taskType: AI_TASK.FLOW_FILTER,
             systemPrompt: prompt.systemPrompt,
             userPrompt: prompt.userPrompt,

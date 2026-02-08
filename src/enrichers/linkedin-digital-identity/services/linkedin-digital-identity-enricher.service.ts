@@ -16,7 +16,11 @@ import { ModuleRun } from '../../../repo/entities/module-run.entity';
 import { ResultWithError } from '../../../common/interfaces';
 import { DocumentSource, CLAIM_KEY } from '../../../common/types/claim-types';
 import { DocumentKind } from '../../../common/types/document.types';
-import { AI_PROVIDER, AI_MODEL, AI_TASK } from '../../../common/types/ai.types';
+import {
+  AI_PROVIDER,
+  AI_MODEL_OPENAI,
+  AI_TASK,
+} from '../../../common/types/ai.types';
 
 @Injectable()
 export class LinkedinDigitalIdentityEnricherService {
@@ -172,7 +176,7 @@ Return JSON:
 
       const aiResponse = await this.aiService.run({
         provider: AI_PROVIDER.OPENAI,
-        model: AI_MODEL.GPT_4O,
+        model: AI_MODEL_OPENAI.GPT_4O,
         taskType: AI_TASK.EMAIL_PATTERN_INFERENCE,
         systemPrompt,
         userPrompt,
@@ -269,7 +273,7 @@ Return JSON:
 
       const aiResponse = await this.aiService.run({
         provider: AI_PROVIDER.OPENAI,
-        model: AI_MODEL.GPT_4O,
+        model: AI_MODEL_OPENAI.GPT_4O,
         taskType: AI_TASK.PROFILE_PHOTO_CONFIDENCE_SIGNAL,
         systemPrompt,
         userPrompt,
@@ -368,7 +372,7 @@ Return JSON:
 
       const aiResponse = await this.aiService.run({
         provider: AI_PROVIDER.OPENAI,
-        model: AI_MODEL.GPT_4O,
+        model: AI_MODEL_OPENAI.GPT_4O,
         taskType: AI_TASK.BIO_EVOLUTION_ANALYSIS,
         systemPrompt,
         userPrompt,
@@ -466,7 +470,7 @@ Return JSON:
 
       const aiResponse = await this.aiService.run({
         provider: AI_PROVIDER.OPENAI,
-        model: AI_MODEL.GPT_4O,
+        model: AI_MODEL_OPENAI.GPT_4O,
         taskType: AI_TASK.DOMAIN_OWNERSHIP_INFERENCE,
         systemPrompt,
         userPrompt,
